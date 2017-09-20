@@ -149,7 +149,6 @@ extern unsigned int mmc_queue_map_sg(struct mmc_queue *,
 extern void mmc_wait_cmdq_empty(struct mmc_host *host);
 #endif
 extern bool mmc_blk_part_cmdq_en(struct mmc_queue *mq);
-extern int mmc_access_rpmb(struct mmc_queue *);
 
 #ifdef CONFIG_MTK_EMMC_HW_CQ
 extern int mmc_cmdq_init(struct mmc_queue *mq, struct mmc_card *card);
