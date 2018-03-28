@@ -4854,7 +4854,8 @@ static void __exit mmc_blk_exit(void)
 	mmc_unregister_driver(&mmc_driver);
 	unregister_blkdev(MMC_BLOCK_MAJOR, "mmc");
 	unregister_chrdev_region(mmc_rpmb_devt, MAX_DEVICES);
-        mt_mmc_biolog_exit();
+	bus_unregister(&mmc_rpmb_bus_type);
+	mt_mmc_biolog_exit();
 }
 
 module_init(mmc_blk_init);
