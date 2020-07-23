@@ -375,6 +375,11 @@ static void mmc_manage_gp_partitions(struct mmc_card *card, u8 *ext_csd)
 /* Minimum partition switch timeout in milliseconds */
 #define MMC_MIN_PART_SWITCH_TIME	300
 
+#ifdef ODM_HQ_EDIT
+/*sunjingtao@ODM.BSP.System  2019/9/7 add for devinfo*/
+struct mmc_card *card_devinfo = NULL;;
+#endif
+
 /*
  * Decode extended CSD.
  */
@@ -384,6 +389,11 @@ static int mmc_decode_ext_csd(struct mmc_card *card, u8 *ext_csd)
 	unsigned int part_size;
 	struct device_node *np;
 	bool broken_hpi = false;
+
+#ifdef ODM_HQ_EDIT
+/*sunjingtao@ODM.BSP.System  2019/9/7 add for devinfo*/
+	card_devinfo = card;
+#endif
 
 	/* Version is coded in the CSD_STRUCTURE byte in the EXT_CSD register */
 	card->ext_csd.raw_ext_csd_structure = ext_csd[EXT_CSD_STRUCTURE];

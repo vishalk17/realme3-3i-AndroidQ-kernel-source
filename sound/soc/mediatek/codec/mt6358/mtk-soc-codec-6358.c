@@ -780,11 +780,13 @@ void Auddrv_Read_Efuse_HPOffset(void)
 }
 EXPORT_SYMBOL(Auddrv_Read_Efuse_HPOffset);
 
+#ifndef ODM_HQ_EDIT
 static void setHpGainZero(void)
 {
 	Ana_Set_Reg(ZCD_CON2, DL_GAIN_0DB << 7, 0x0f80);
 	Ana_Set_Reg(ZCD_CON2, DL_GAIN_0DB, 0x001f);
 }
+#endif
 
 static void Hp_Zcd_Enable(bool _enable)
 {
@@ -1456,6 +1458,7 @@ static void OpenTrimBufferHardware_withLO(bool enable, bool buffer_on)
 
 #endif
 
+#ifndef ODM_HQ_EDIT
 static bool OpenHeadPhoneImpedanceSetting(bool bEnable)
 {
 	pr_debug("%s benable = %d\n", __func__, bEnable);
@@ -1569,6 +1572,7 @@ static bool OpenHeadPhoneImpedanceSetting(bool bEnable)
 	}
 	return true;
 }
+#endif
 
 /* Headphone Impedance Detection */
 /* Pmic Headphone Impedance variable */
@@ -1582,6 +1586,7 @@ struct mtk_hpdet_param {
 	int resistance_second_threshold;
 };
 
+#ifndef ODM_HQ_EDIT
 static int hp_impedance;
 static const int auxcable_impedance = 5000;
 static int efuse_current_calibrate;
@@ -1808,6 +1813,7 @@ static int detect_impedance(void)
 
 	return impedance;
 }
+#endif
 
 /* 1.7V * 0.5kohm / (2.5 + 0.5)kohm = 0.283V, support 1k ~ 14k, 0.5k margin */
 #define MIC_VINP_4POLE_THRES_MV 283
@@ -3738,6 +3744,41 @@ static int Audio_AmpR_Set(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+#ifdef VENDOR_EDIT
+/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26,
+ * add for HS Left Right control sperate */
+static int Headset_Left_Right_Set(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	pr_warn("%s()\n", __func__);
+
+	if (ucontrol->value.integer.value[0] == 0) {
+		Ana_Set_Reg(AUDDEC_ANA_CON0, 0x0200, 0x0300);	/* Left On */
+	} else if (ucontrol->value.integer.value[0] == 1) {
+		Ana_Set_Reg(AUDDEC_ANA_CON0, 0x0000, 0x0300);	/* Left Off */
+	} else if (ucontrol->value.integer.value[0] == 2) {
+		Ana_Set_Reg(AUDDEC_ANA_CON0, 0x0800, 0x0c00);	/* Right On */
+	} else if (ucontrol->value.integer.value[0] == 3) {
+		Ana_Set_Reg(AUDDEC_ANA_CON0, 0x0000, 0x0c00);	/* Right Off */
+	} else if (ucontrol->value.integer.value[0] == 4) {
+		Ana_Set_Reg(AUDDEC_ANA_CON0, 0x0a00, 0x0f00);	/* Both On */
+	} else if (ucontrol->value.integer.value[0] == 5) {
+		Ana_Set_Reg(AUDDEC_ANA_CON0, 0x0000, 0x0f00);	/* Both Off */
+	} else {
+		pr_warn("%s() warning\n ", __func__);
+	}
+
+	pr_warn("%s() done\n", __func__);
+	return 0;
+}
+
+static int Headset_Left_Right_Get(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	return 0;
+}
+#endif /* VENDOR_EDIT */
+
 static int PMIC_REG_CLEAR_Set(struct snd_kcontrol *kcontrol,
 			      struct snd_ctl_elem_value *ucontrol)
 {
@@ -4676,6 +4717,12 @@ static const struct snd_kcontrol_new Audio_snd_auxadc_controls[] = {
 		       Audio_AuxAdcData_Set),
 };
 
+#ifdef VENDOR_EDIT
+/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26,
+ * add for HS Left Right control sperate */
+static const char *Headset_Left_Right_Setting[] = {"LeftOn",
+	"LeftOff", "RightOn","RightOff", "Both","None"};
+#endif /* VENDOR_EDIT */
 
 static const char *const amp_function[] = { "Off", "On" };
 static const char *const aud_clk_buf_function[] = { "Off", "On" };
@@ -5175,6 +5222,12 @@ static int Audio_MIC_Mode_Set(struct snd_kcontrol *kcontrol,
 static int hp_impedance_get(struct snd_kcontrol *kcontrol,
 			    struct snd_ctl_elem_value *ucontrol)
 {
+#ifdef ODM_HQ_EDIT
+	//jianghao@ODM.HQ.Multimedia.Audio.BSP 2020/04/02 Turn off impedance detection
+	pr_debug("%s(), turn off hp_impedance\n", __func__);
+	ucontrol->value.integer.value[0] = 32;
+	return 0;
+#else
 	if (!set_hp_impedance_ctl) {
 		pr_warn("%s(), set_hp_impedance_ctl == NULL\n", __func__);
 		return 0;
@@ -5194,6 +5247,7 @@ static int hp_impedance_get(struct snd_kcontrol *kcontrol,
 	pr_debug("%s(), hp_impedance = %d, efuse = %d\n",
 		 __func__, hp_impedance, efuse_current_calibrate);
 	return 0;
+#endif
 }
 
 static int hp_impedance_set(struct snd_kcontrol *kcontrol,
@@ -5253,7 +5307,12 @@ static const struct soc_enum Audio_DL_Enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(amp_function), amp_function),
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(amp_function), amp_function),
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(dctrim_control_state),
-	dctrim_control_state)
+	dctrim_control_state),
+	#ifdef VENDOR_EDIT
+	/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26,
+	 * add for HS Left Right control sperate */
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(Headset_Left_Right_Setting), Headset_Left_Right_Setting)
+#endif /* VENDOR_EDIT */
 };
 
 static const struct snd_kcontrol_new mt6358_snd_controls[] = {
@@ -5313,7 +5372,12 @@ static const struct snd_kcontrol_new mt6358_snd_controls[] = {
 		     disable_pmic_dctrim_get,
 		     disable_pmic_dctrim_set),
 #endif
-
+#ifdef VENDOR_EDIT
+	/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26,
+	 * add for HS Left Right control sperate */
+	SOC_ENUM_EXT("Headset_Left_Right_Sel", Audio_DL_Enum[14],
+		Headset_Left_Right_Get, Headset_Left_Right_Set),
+#endif /* VENDOR_EDIT */
 };
 
 void SetMicPGAGain(void)
@@ -5366,13 +5430,25 @@ static bool TurnOnADcPowerACC(int ADCType, bool enable)
 			/* mic bias */
 			if (mCodec_data->ana_mux[MICSOURCE_MUX_IN_1] == 0) {
 				/* phone mic */
+#ifdef VENDOR_EDIT
+				/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26,
+				 * modify for changing micbias vol to 2.5V of main/sub/headset mic */
+				Ana_Set_Reg(AUDENC_ANA_CON9, 0x0051, 0xffff);
+#else /* VENDOR_EDIT */
 				/* Enable MICBIAS0, MISBIAS0 = 1P9V */
 				Ana_Set_Reg(AUDENC_ANA_CON9, 0x0021, 0xffff);
+#endif /* VENDOR_EDIT */
 			} else if (mCodec_data->ana_mux[MICSOURCE_MUX_IN_1]
 			== 1) {
 				/* headset mic */
+#ifdef VENDOR_EDIT
+				/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26,
+				 * modify for changing micbias vol to 2.6V for headset mic recording */
+				Ana_Set_Reg(AUDENC_ANA_CON10, 0x0061, 0xffff);
+#else /* VENDOR_EDIT */
 				/* Enable MICBIAS1, MISBIAS1 = 2P6V */
 				Ana_Set_Reg(AUDENC_ANA_CON10, 0x0061, 0xffff);
+#endif /* VENDOR_EDIT */
 			}
 
 			SetMicPGAGain();
@@ -5468,6 +5544,11 @@ static bool TurnOnADcPowerACC(int ADCType, bool enable)
 				== 1) {
 				/* headset mic */
 				/* Disable MICBIAS1 */
+#ifdef VENDOR_EDIT
+				/* hongxiang.jin@PSW.MM.AudioDriver.Machine, 2019/08/26,
+				 * modify for changing micbias vol to 2.7V for headset mic not recording */
+				Ana_Set_Reg(AUDENC_ANA_CON10, 0x0071, 0xffff);
+#endif /* VENDOR_EDIT */
 				Ana_Set_Reg(AUDENC_ANA_CON10, 0x0000, 0x0001);
 			}
 
@@ -7592,6 +7673,7 @@ static const struct snd_kcontrol_new mt6358_UL_Codec_controls[] = {
 		       Audio_Vow_Periodic_Set),
 };
 
+#ifndef ODM_HQ_EDIT
 static int read_efuse_hp_impedance_current_calibration(void)
 {
 	int ret = 0;
@@ -7644,6 +7726,7 @@ static int read_efuse_hp_impedance_current_calibration(void)
 	pr_debug("-%s(), efuse: %d\n", __func__, value);
 	return value;
 }
+#endif
 
 static void mt6358_codec_init_reg(struct snd_soc_codec *codec)
 {
@@ -7761,7 +7844,9 @@ static int mt6358_codec_probe(struct snd_soc_codec *codec)
 	memset((void *)mCodec_data, 0, sizeof(struct mt6358_codec_priv));
 	mt6358_codec_init_reg(codec);
 	InitCodecDefault();
+#ifndef ODM_HQ_EDIT
 	efuse_current_calibrate = read_efuse_hp_impedance_current_calibration();
+#endif
 	mInitCodec = true;
 	apply_n12db_gain = 0;
 

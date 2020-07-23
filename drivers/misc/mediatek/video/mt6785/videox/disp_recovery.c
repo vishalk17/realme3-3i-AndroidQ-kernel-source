@@ -89,6 +89,10 @@ static unsigned int esd_check_mode;
 static unsigned int esd_check_enable;
 static int te_irq;
 
+#ifdef ODM_HQ_EDIT
+/* liyan@ODM.HQ.Multimedia.LCM 2019/09/29  add backlight recovery for esd recovery */
+unsigned int esd_recovery_backlight_level = 1600;
+#endif /* ODM_HQ_EDIT */
 
 #if defined(CONFIG_MTK_DUAL_DISPLAY_SUPPORT) && \
 	(CONFIG_MTK_DUAL_DISPLAY_SUPPORT == 2)
@@ -377,6 +381,10 @@ destroy_cmdq:
 	return ret;
 }
 
+#ifdef ODM_HQ_EDIT
+//panxiaolong@ODM.Multimedia.LCD  2020/01/15 add for read nova reg for mipi error
+int nova_mipi_error_data;
+#endif
 int do_lcm_vdo_lp_read(struct dsi_cmd_desc *cmd_tab, unsigned int count)
 {
 	int ret = 0;
@@ -581,6 +589,12 @@ int do_lcm_vdo_lp_read(struct dsi_cmd_desc *cmd_tab, unsigned int count)
 		cmd_tab[i].dlen = recv_data_cnt;
 		DISPDBG("[DSI]packet_type~recv_data_cnt = 0x%x~0x%x\n",
 			packet_type, recv_data_cnt);
+#ifdef ODM_HQ_EDIT
+//panxiaolong@ODM.Multimedia.LCD  2020/01/15 add for read nova reg for mipi error
+		printk("mipi_error packet_type = %d\n",packet_type);
+		printk("mipi_error do_lcm_vdo_lp_read read_data1.byte0 = 0x%x,read_data1.byte0= 0x%x",read_data1.byte0,read_data1.byte1);
+		nova_mipi_error_data = read_data1.byte0<<8|read_data1.byte1;
+#endif
 	}
 
 DISPTORY:
@@ -825,6 +839,10 @@ static int primary_display_check_recovery_worker_kthread(void *data)
 	return 0;
 }
 
+#ifdef ODM_HQ_EDIT
+/* zhongwenjie@PSW.BSP.TP.Function, 2018/07/05, Add for tp fw download after esd recovery */
+extern bool flag_lcd_off;
+#endif /*ODM_HQ_EDIT*/
 /* ESD RECOVERY */
 int primary_display_esd_recovery(void)
 {
@@ -946,7 +964,16 @@ int primary_display_esd_recovery(void)
 		cmdqCoreSetEvent(CMDQ_SYNC_TOKEN_CONFIG_DIRTY);
 		mdelay(40);
 	}
+#ifdef ODM_HQ_EDIT
+/* liyan@ODM.HQ.Multimedia.LCM 2019/09/29  add backlight recovery for esd recovery */
+	disp_lcm_set_backlight(primary_get_lcm(), NULL, esd_recovery_backlight_level);
+	flag_lcd_off = false;
+#endif /*ODM_HQ_EDIT*/
 
+#ifdef CONFIG_MTK_HIGH_FRAME_RATE
+	primary_display_update_cfg_id(0);
+	DISPCHECK("%s,cfg_id = 0\n", __func__);
+#endif
 done:
 	primary_display_manual_unlock();
 	DISPCHECK("[ESD]ESD recovery end\n");

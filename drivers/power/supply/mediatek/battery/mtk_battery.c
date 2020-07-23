@@ -73,6 +73,21 @@
 #include <pmic_lbat_service.h>
 
 
+#ifdef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger, 2019/12/02,Add for kpoc charging */
+int fgauge_is_start = 0;
+
+#define Get_FakeOff_Param _IOW('k', 7, int)
+#define Turn_Off_Charging _IOW('k', 9, int)
+
+extern int oppo_chg_get_ui_soc(void);
+extern int oppo_chg_get_notify_flag(void);
+extern int oppo_chg_show_vooc_logo_ornot(void);
+extern bool mt6360_get_vbus_status(void);
+extern int oppo_get_prop_status(void);
+extern bool oppo_chg_check_chip_is_null(void);
+extern int is_vooc_project(void);
+#endif /*ODM_HQ_EDIT*/
 
 /* ============================================================ */
 /* define */
@@ -114,6 +129,8 @@ static int battery_in_data[1] = { 0 };
 static int battery_out_data[1] = { 0 };
 static bool g_ADC_Cali;
 
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_HEALTH,
@@ -128,6 +145,7 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_COUNTER,
 	POWER_SUPPLY_PROP_TEMP,
 };
+#endif /* ODM_HQ_EDIT */
 
 /* weak function */
 int __attribute__ ((weak))
@@ -372,6 +390,8 @@ void battery_update_psd(struct battery_data *bat_data)
 	bat_data->BAT_batt_temp = battery_get_bat_temperature();
 }
 
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 static int battery_get_property(struct power_supply *psy,
 	enum power_supply_property psp,
 	union power_supply_propval *val)
@@ -469,6 +489,7 @@ void evb_battery_init(void)
 	battery_main.BAT_batt_vol = 4200;
 	battery_main.BAT_batt_temp = 22;
 }
+#endif /* ODM_HQ_EDIT */
 
 static void disable_fg(void)
 {
@@ -505,7 +526,7 @@ static void disable_fg(void)
 	gauge_enable_interrupt(FG_RG_INT_EN_BAT2_L, 0);
 	gm.disableGM30 = 1;
 	gm.ui_soc = 50;
-	battery_main.BAT_CAPACITY = 50;
+	//battery_main.BAT_CAPACITY = 50;    //zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging
 }
 
 bool fg_interrupt_check(void)
@@ -517,6 +538,8 @@ bool fg_interrupt_check(void)
 	return true;
 }
 
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 void battery_update(struct battery_data *bat_data)
 {
 	struct power_supply *bat_psy = bat_data->psy;
@@ -535,6 +558,7 @@ void battery_update(struct battery_data *bat_data)
 
 	power_supply_changed(bat_psy);
 }
+#endif /* ODM_HQ_EDIT */
 
 bool is_kernel_power_off_charging(void)
 {
@@ -1139,9 +1163,13 @@ static ssize_t show_Battery_Temperature(
 	struct device *dev, struct device_attribute *attr,
 					       char *buf)
 {
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 	bm_err("%s: %d %d\n",
 		__func__,
 		battery_main.BAT_batt_temp, gm.fixed_bat_tmp);
+#endif /* ODM_HQ_EDIT */
+
 	return sprintf(buf, "%d\n", gm.fixed_bat_tmp);
 }
 
@@ -1164,12 +1192,15 @@ static ssize_t store_Battery_Temperature(
 			wakeup_fg_algo(FG_INTR_BAT_TMP_C_HT);
 			wakeup_fg_algo(FG_INTR_BAT_TMP_HT);
 		}
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 		battery_main.BAT_batt_temp = force_get_tbat(true);
 		bm_err(
 			"%s: fixed_bat_tmp:%d ,tmp:%d!\n",
 			__func__,
 			temp, battery_main.BAT_batt_temp);
 		battery_update(&battery_main);
+#endif /* ODM_HQ_EDIT */
 	} else {
 		bm_err("%s: format error!\n", __func__);
 	}
@@ -1203,7 +1234,10 @@ static ssize_t store_UI_SOC(
 			__func__,
 			gm.ui_soc, gm.fixed_uisoc);
 
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 		battery_update(&battery_main);
+#endif /* ODM_HQ_EDIT */
 	}
 
 	return size;
@@ -1634,9 +1668,12 @@ int force_get_tbat(bool update)
 			"battery temperature is too low %d and disable GM3.0\n",
 			bat_temperature_val);
 		disable_fg();
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 		if (gm.disableGM30 == true)
 			battery_main.BAT_CAPACITY = 50;
 		battery_update(&battery_main);
+#endif /* ODM_HQ_EDIT */
 	}
 
 	if (bat_temperature_val <= BATTERY_TMP_TO_DISABLE_NAFG) {
@@ -1950,7 +1987,12 @@ int wakeup_fg_algo_atomic(unsigned int flow_state)
 
 int fg_get_battery_temperature_for_zcv(void)
 {
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 	return battery_main.BAT_batt_temp;
+#else
+	return 25;
+#endif /* ODM_HQ_EDIT */
 }
 
 int battery_get_charger_zcv(void)
@@ -3008,9 +3050,12 @@ static ssize_t store_FG_daemon_disable(
 {
 	bm_err("[disable FG daemon]\n");
 	disable_fg();
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 	if (gm.disableGM30 == true)
 		battery_main.BAT_CAPACITY = 50;
 	battery_update(&battery_main);
+#endif /* ODM_HQ_EDIT */
 	return size;
 }
 static DEVICE_ATTR(
@@ -3561,33 +3606,43 @@ static int battery_callback(
 		{
 /* START CHARGING */
 			fg_sw_bat_cycle_accu();
-
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 			battery_main.BAT_STATUS = POWER_SUPPLY_STATUS_CHARGING;
 			battery_update(&battery_main);
+#endif /* ODM_HQ_EDIT */
 		}
 		break;
 	case CHARGER_NOTIFY_STOP_CHARGING:
 		{
 /* STOP CHARGING */
 			fg_sw_bat_cycle_accu();
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 			battery_main.BAT_STATUS =
 			POWER_SUPPLY_STATUS_DISCHARGING;
 			battery_update(&battery_main);
+#endif /* ODM_HQ_EDIT */
 		}
 		break;
 	case CHARGER_NOTIFY_ERROR:
 		{
 /* charging enter error state */
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 		battery_main.BAT_STATUS = POWER_SUPPLY_STATUS_NOT_CHARGING;
 		battery_update(&battery_main);
+#endif /* ODM_HQ_EDIT */
 		}
 		break;
 	case CHARGER_NOTIFY_NORMAL:
 		{
 /* charging leave error state */
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 		battery_main.BAT_STATUS = POWER_SUPPLY_STATUS_CHARGING;
 		battery_update(&battery_main);
-
+#endif /* ODM_HQ_EDIT */
 		}
 		break;
 
@@ -3640,6 +3695,11 @@ struct file *filp, unsigned int cmd, unsigned long arg)
 	case Get_META_BAT_CAR_TUNE_VALUE:
 	case Set_META_BAT_CAR_TUNE_VALUE:
 	case Set_BAT_DISABLE_NAFG:
+#ifdef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger, 2019/12/02,Add for kpoc charging */
+	case Get_FakeOff_Param:
+	case Turn_Off_Charging:
+#endif /*ODM_HQ_EDIT*/
 	case Set_CARTUNE_TO_KERNEL: {
 		bm_notice(
 			"%s send to unlocked_ioctl cmd=0x%08x\n",
@@ -3671,6 +3731,10 @@ static long adc_cali_ioctl(
 	int adc_out_data[2] = { 1, 1 };
 	int temp_car_tune;
 	int isdisNAFG = 0;
+#ifdef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger, 2019/12/02,Add for kpoc charging */
+	int fakeoff_out_data[5] = {0, 0, 0, 0, 0};
+#endif /*ODM_HQ_EDIT*/
 
 	bm_notice("%s enter\n", __func__);
 	mutex_lock(&gm.fg_mutex);
@@ -3916,6 +3980,38 @@ static long adc_cali_ioctl(
 		bm_err("**** unlocked_ioctl Set_CARTUNE_TO_KERNEL[%d,%d], ret=%d\n",
 			adc_in_data[0], adc_in_data[1], ret);
 		break;
+
+#ifdef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger, 2019/12/02,Add for kpoc charging */
+	case Get_FakeOff_Param:
+		user_data_addr = (int *)arg;
+		fakeoff_out_data[0] = oppo_chg_get_ui_soc();
+		fakeoff_out_data[1] = oppo_chg_get_notify_flag();
+		if (mt6360_get_vbus_status() == true && oppo_get_prop_status() != POWER_SUPPLY_STATUS_NOT_CHARGING) {
+			fakeoff_out_data[2] = POWER_SUPPLY_STATUS_CHARGING;
+		} else {
+			fakeoff_out_data[2] = POWER_SUPPLY_STATUS_UNKNOWN;
+		}
+		fakeoff_out_data[3] = oppo_chg_show_vooc_logo_ornot();
+		if (is_vooc_project()) {
+			fakeoff_out_data[4] = (oppo_chg_check_chip_is_null() == false ? 1 : 0);
+		} else {
+			if (fgauge_is_start == 1)
+				fakeoff_out_data[4] = 2;
+			else
+				fakeoff_out_data[4] = 0;
+		}
+
+		ret = copy_to_user(user_data_addr, fakeoff_out_data, 20);
+		bm_err("ioctl : Get_FakeOff_Param: ui_soc:%d, g_NotifyFlag:%d, chr_det:%d, fast_chg:%d\n",
+			fakeoff_out_data[0], fakeoff_out_data[1], fakeoff_out_data[2], fakeoff_out_data[3]);
+		break;
+
+	case Turn_Off_Charging:
+		bm_err("ioctl : Turn_Off_Charging\n");
+		break;
+#endif /*ODM_HQ_EDIT*/
+
 	default:
 		bm_err("**** unlocked_ioctl unknown IOCTL: 0x%08x\n", cmd);
 		g_ADC_Cali = false;
@@ -4007,6 +4103,8 @@ static int __init battery_probe(struct platform_device *dev)
 
 	/* Power supply class */
 #if !defined(CONFIG_MTK_DISABLE_GAUGE)
+#ifndef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
 	battery_main.psy =
 		power_supply_register(
 			&(dev->dev), &battery_main.psd, NULL);
@@ -4015,6 +4113,7 @@ static int __init battery_probe(struct platform_device *dev)
 		ret = PTR_ERR(battery_main.psy);
 		return ret;
 	}
+#endif /* ODM_HQ_EDIT */
 	bm_err("[BAT_probe] power_supply_register Battery Success !!\n");
 #endif
 	ret = device_create_file(&(dev->dev), &dev_attr_Battery_Temperature);

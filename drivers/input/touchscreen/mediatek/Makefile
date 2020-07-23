@@ -10,14 +10,20 @@ obj-y   +=  tpd_debug.o
 obj-y   +=  tpd_default.o
 obj-y   +=  tpd_misc.o
 obj-y   +=  tpd_setting.o
-obj-$(CONFIG_TOUCHSCREEN_MTK_SOLOMON)	+=  SOLOMON/
-obj-$(CONFIG_TOUCHSCREEN_MTK_FOCALTECH_TS)	+=  focaltech_touch/
-obj-$(CONFIG_TOUCHSCREEN_MTK_GT1151)	+=  GT1151/
-obj-$(CONFIG_TOUCHSCREEN_MTK_GT911)	+=  GT911/
-obj-$(CONFIG_TOUCHSCREEN_MTK_GSLX680)	+=  gslX680/
-obj-$(CONFIG_TOUCHSCREEN_MTK_NT36xxx)	+=  NT36xxx/
-obj-$(CONFIG_TOUCHSCREEN_MTK_GT9XX_LM)	+=  GT9XX_LM/
-obj-$(CONFIG_TOUCHSCREEN_FT5X26)	+=  FT5X26/
-obj-$(CONFIG_TOUCHSCREEN_MTK_GT5688)	+=  GT5688/
-obj-$(CONFIG_TOUCHSCREEN_HIMAX_I2C)	+=  hxchipset/
-obj-$(CONFIG_TOUCHSCREEN_MTK_FOCALTECH_FHD)	+=  focaltech_fhd_touch/
+
+#Benshan.Cheng@ODM_HQ.BSP.Tp, 2019/08/12, add tp driver
+#obj-$(CONFIG_TOUCHSCREEN_MTK_SOLOMON)	+=  SOLOMON/
+#obj-$(CONFIG_TOUCHSCREEN_MTK_FOCALTECH_TS)	+=  focaltech_touch/
+#obj-$(CONFIG_TOUCHSCREEN_MTK_GT1151)	+=  GT1151/
+#obj-$(CONFIG_TOUCHSCREEN_MTK_GT911)	+=  GT911/
+#obj-$(CONFIG_TOUCHSCREEN_MTK_GSLX680)	+=  gslX680/
+#obj-$(CONFIG_TOUCHSCREEN_MTK_NT36xxx)	+=  NT36xxx/
+#obj-$(CONFIG_TOUCHSCREEN_MTK_GT9XX_LM)	+=  GT9XX_LM/
+#obj-$(CONFIG_TOUCHSCREEN_FT5X26)	+=  FT5X26/
+#obj-$(CONFIG_TOUCHSCREEN_MTK_GT5688)	+=  GT5688/
+#obj-$(CONFIG_TOUCHSCREEN_HIMAX_I2C)	+=  hxchipset/
+
+#Benshan.Cheng@ODM_HQ.BSP.Tp, 2019/08/12, add tp driver
+#ifeq ($(ODM_HQ_EDIT),yes)
+obj-$(CONFIG_TOUCHPANEL_HQ) += hq_green/
+#endif

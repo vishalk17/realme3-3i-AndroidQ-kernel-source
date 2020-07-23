@@ -18,6 +18,12 @@
 struct alsps_context *alsps_context_obj /* = NULL*/;
 struct platform_device *pltfm_dev;
 int last_als_report_data = -1;
+/* zhoujunwei@ODM_HQ.BSP.Sensors.Config, 2020/04/03, sync sensor data */
+#if defined(ODM_HQ_EDIT) && !defined(TARGET_WATERMELON_Q_PROJECT)
+/* zuoqiquan@ODM_HQ.BSP.Sensors.Config, 2019/10/12, add als node for als_offset cali */
+int als_offset = 0;
+int dark_code = 0;
+#endif
 
 /* AAL default delay timer(nano seconds)*/
 #define AAL_DELAY 200000000
@@ -35,6 +41,21 @@ int als_data_report_t(int value, int status, int64_t time_stamp)
 	cxt = alsps_context_obj;
 	event.time_stamp = time_stamp;
 	/* pr_debug(" +als_data_report! %d, %d\n", value, status); */
+/* zhoujunwei@ODM_HQ.BSP.Sensors.Config, 2020/04/03, sync sensor data */
+#if defined(ODM_HQ_EDIT) && !defined(TARGET_WATERMELON_Q_PROJECT)
+    /* zuoqiquan@ODM_HQ.BSP.Sensors.Config, 2019/10/12, add als node for als_offset cali */
+	dark_code = value;
+	if(value >= als_offset)
+		value = value - als_offset;
+	else
+		value = 0;
+	/* zhanghuan@ODM_HQ.BSP.Sensors.Config, 2019/03/22, reset als to zero when lux less than 4 */
+	if(value < 4)
+	{
+		//pr_debug("lux less than 4:%d\n", value); remove log zuoqiquan@191206
+		value = 0;
+	}
+#endif
 	/* force trigger data update after sensor enable. */
 	if (cxt->is_get_valid_als_data_after_enable == false) {
 		event.handle = ID_LIGHT;
@@ -43,7 +64,8 @@ int als_data_report_t(int value, int status, int64_t time_stamp)
 		err = sensor_input_event(cxt->als_mdev.minor, &event);
 		cxt->is_get_valid_als_data_after_enable = true;
 	}
-	if (value != last_als_report_data) {
+	//if (value != last_als_report_data)
+	{
 		event.handle = ID_LIGHT;
 		event.flush_action = DATA_ACTION;
 		event.word[0] = value;
@@ -121,6 +143,10 @@ int rgbw_flush_report(void)
 	return err;
 }
 
+#ifdef VENDOR_EDIT
+/*zhq@PSW.BSP.Sensor, 2018/11/20, Add for prox report count*/
+extern uint32_t kernel_prox_report_count;
+#endif /*VENDOR_EDIT*/
 int ps_data_report_t(int value, int status, int64_t time_stamp)
 {
 	int err = 0;
@@ -128,10 +154,15 @@ int ps_data_report_t(int value, int status, int64_t time_stamp)
 
 	memset(&event, 0, sizeof(struct sensor_event));
 
-	pr_notice("[ALS/PS]%s! %d, %d\n", __func__, value, status);
 	event.flush_action = DATA_ACTION;
 	event.time_stamp = time_stamp;
 	event.word[0] = value + 1;
+#ifdef VENDOR_EDIT
+/*zhq@PSW.BSP.Sensor, 2018/11/20, Add for prox report count*/
+	event.word[1] = kernel_prox_report_count;
+
+	pr_notice("[ALS/PS] ps_data_report! value %d, count %d\n", value, event.word[1]);
+#endif /*VENDOR_EDIT*/
 	event.status = status;
 	err = sensor_input_event(alsps_context_obj->ps_mdev.minor, &event);
 	return err;
@@ -789,9 +820,15 @@ static ssize_t ps_store_batch(struct device *dev, struct device_attribute *attr,
 					cxt->ps_latency_ns);
 	else
 		err = cxt->ps_ctl.batch(0, cxt->ps_delay_ns, 0);
+
+#ifndef VENDOR_EDIT
+//zhq@PSW.BSP.Sensor, 2018-11-26, remove PS report default status
+	ps_data_report(1, SENSOR_STATUS_ACCURACY_HIGH);
+#endif
 #else
 	err = ps_enable_and_batch();
 #endif
+
 	mutex_unlock(&alsps_context_obj->alsps_op_mutex);
 	pr_debug("%s done: %d\n", __func__, cxt->is_ps_batch_enable);
 	if (err)
@@ -865,6 +902,35 @@ static ssize_t ps_store_cali(struct device *dev, struct device_attribute *attr,
 	vfree(cali_buf);
 	return count;
 }
+/* zhoujunwei@ODM_HQ.BSP.Sensors.Config, 2020/04/03, sync sensor data */
+#if defined(ODM_HQ_EDIT) && !defined(TARGET_WATERMELON_Q_PROJECT)
+    /* zuoqiquan@ODM_HQ.BSP.Sensors.Config, 2019/10/12, add als node for als_offset cali */
+static ssize_t als_show_offset(struct device *dev, struct device_attribute *attr,
+			     char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%d\n", als_offset);
+}
+
+static ssize_t als_store_offset(struct device *dev, struct device_attribute *attr,
+				  const char *buf, size_t count)
+{
+	sscanf(buf, "%d", &als_offset);
+	if(als_offset > 50 || als_offset < 0)
+	{
+		als_offset = 0;
+		pr_err("als_offset beyond [0-50]:%d\n", als_offset);
+	}
+	else
+		pr_notice("als set offset:%d\n", als_offset);
+	return count;
+}
+
+static ssize_t als_show_dark(struct device *dev, struct device_attribute *attr,
+			     char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%d\n", dark_code);
+}
+#endif
 
 static int als_ps_remove(struct platform_device *pdev)
 {
@@ -996,6 +1062,12 @@ DEVICE_ATTR(alsbatch, 0644, als_show_batch, als_store_batch);
 DEVICE_ATTR(alsflush, 0644, als_show_flush, als_store_flush);
 DEVICE_ATTR(alsdevnum, 0644, als_show_devnum, NULL);
 DEVICE_ATTR(alscali, 0644, NULL, als_store_cali);
+/* zhoujunwei@ODM_HQ.BSP.Sensors.Config, 2020/04/03, sync sensor data */
+#if defined(ODM_HQ_EDIT) && !defined(TARGET_WATERMELON_Q_PROJECT)
+    /* zuoqiquan@ODM_HQ.BSP.Sensors.Config, 2019/10/12, add als node for als_offset cali */
+DEVICE_ATTR(alsoffset, 0644, als_show_offset, als_store_offset);
+DEVICE_ATTR(alsdark, 0644, als_show_dark, NULL);
+#endif
 DEVICE_ATTR(psactive, 0644, ps_show_active, ps_store_active);
 DEVICE_ATTR(psbatch, 0644, ps_show_batch, ps_store_batch);
 DEVICE_ATTR(psflush, 0644, ps_show_flush, ps_store_flush);
@@ -1008,6 +1080,13 @@ static struct attribute *als_attributes[] = {
 	&dev_attr_alsflush.attr,
 	&dev_attr_alsdevnum.attr,
 	&dev_attr_alscali.attr,
+/* zhoujunwei@ODM_HQ.BSP.Sensors.Config, 2020/04/03, sync sensor data */
+#if defined(ODM_HQ_EDIT) && !defined(TARGET_WATERMELON_Q_PROJECT)
+
+    /* zuoqiquan@ODM_HQ.BSP.Sensors.Config, 2019/10/12, add als node for als_offset cali */
+	&dev_attr_alsoffset.attr,
+	&dev_attr_alsdark.attr,
+#endif
 	NULL
 };
 

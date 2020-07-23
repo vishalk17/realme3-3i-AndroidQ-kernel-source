@@ -45,6 +45,10 @@ struct mt6360_ldo_platform_data {
 	struct resource *irq_res;
 	int irq_res_cnt;
 	u32 sdcard_det_en;
+#ifdef ODM_HQ_EDIT
+/*sunjingtao@ODM.BSP.System  2019/8/28 add for SD card*/
+	u8 ldo5_ctrls[MT6360_LDO_CTRLS_NUM];
+#endif // ODM_HQ_EDIT
 };
 
 struct mt6360_ldo_info {

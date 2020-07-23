@@ -366,6 +366,17 @@ void msdc_pmic_force_vcore_pwm(bool enable)
 }
 #endif /*if !defined(FPGA_PLATFORM)*/
 
+#ifdef ODM_HQ_EDIT
+/*sunjingtao@ODM_HQ.BSP.Kernel.Driver 2019.08.22 add sdcard poweroff quick*/
+void msdc_sd_power_off_quick(void)
+{
+	int ret;
+	struct regulator *reg;
+	reg=regulator_get(NULL,"VMC");
+	ret = regulator_disable(reg);
+}
+#endif
+
 void msdc_set_host_power_control(struct msdc_host *host)
 {
 	if (host->hw->host_function == MSDC_EMMC) {

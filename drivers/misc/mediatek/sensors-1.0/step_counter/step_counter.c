@@ -945,7 +945,13 @@ int step_c_data_report_t(uint32_t new_counter, int status, int64_t time_stamp)
 
 	memset(&event, 0, sizeof(struct sensor_event));
 	event.time_stamp = time_stamp;
-	if (last_step_counter != new_counter) {
+#ifdef ODM_HQ_EDIT
+	/* zuoqiquan@ODM.BSP.Sensor  2020/2/4 RTC 2683843 filter step counter 0  data */
+	if ((last_step_counter != new_counter) && (0 != new_counter))
+#else
+	if (last_step_counter != new_counter)
+#endif /*odm_HQ_EDIT*/
+	{
 		event.flush_action = DATA_ACTION;
 		event.handle = ID_STEP_COUNTER;
 		event.word[0] = new_counter;
@@ -954,6 +960,10 @@ int step_c_data_report_t(uint32_t new_counter, int status, int64_t time_stamp)
 		if (err >= 0)
 			last_step_counter = new_counter;
 	}
+#ifdef ODM_HQ_EDIT
+/* zuoqiquan@ODM.BSP.Sensor  2019/11/29 add log for step_counter */
+	printk("step_c data[%d],last[%d]\n",new_counter,last_step_counter);
+#endif /*ODM_HQ_EDIT*/
 	return err;
 }
 int step_c_data_report(uint32_t new_counter, int status)
@@ -978,6 +988,10 @@ int floor_c_data_report_t(uint32_t new_counter, int status, int64_t time_stamp)
 		if (err >= 0)
 			last_floor_counter = new_counter;
 	}
+#ifdef ODM_HQ_EDIT
+/* zuoqiquan@ODM.BSP.Sensor  2019/11/29 add log for step_counter */
+	printk("step_f data[%d]\n",new_counter);
+#endif /*ODM_HQ_EDIT*/
 	return err;
 }
 int floor_c_data_report(uint32_t new_counter, int status)

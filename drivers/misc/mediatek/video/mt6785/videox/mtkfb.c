@@ -109,6 +109,26 @@ static bool no_update;
 static struct disp_session_input_config session_input;
 long dts_gpio_state;
 
+#ifdef ODM_HQ_EDIT
+extern bool oppo_display_ffl_support;
+extern bool oppo_display_sau_support;
+#endif /*ODM_HQ_EDIT*/
+
+#ifdef VENDOR_EDIT
+//jie.cheng@Swdp.shanghai, 2017/06/05, Add notifier for fb info
+static BLOCKING_NOTIFIER_HEAD(mtkfb_notifier_list);
+int mtkfb_register_client(struct notifier_block *nb)
+{
+	    return blocking_notifier_chain_register(&mtkfb_notifier_list, nb);
+}
+EXPORT_SYMBOL(mtkfb_register_client);
+int mtkfb_unregister_client(struct notifier_block *nb)
+{
+	    return blocking_notifier_chain_unregister(&mtkfb_notifier_list, nb);
+}
+EXPORT_SYMBOL(mtkfb_unregister_client);
+#endif /* VENDOR_EDIT */
+
 /* macro definiton */
 #define ALIGN_TO(x, n)  (((x) + ((n) - 1)) & ~((n) - 1))
 #define MTK_FB_XRESV (ALIGN_TO(MTK_FB_XRES, MTK_FB_ALIGNMENT))
@@ -321,6 +341,16 @@ static int mtkfb_blank(int blank_mode, struct fb_info *info)
 
 	return 0;
 }
+#ifdef ODM_HQ_EDIT
+/*
+* Yongpeng.Yi@PSW.MM.Display.LCD.Machine, 2018/02/27,
+* add for face fill light node
+*/
+unsigned int ffl_backlight_backup;
+extern unsigned int ffl_set_mode;
+extern unsigned int ffl_backlight_on;
+extern bool ffl_trigger_finish;
+#endif /* ODM_HQ_EDIT */
 
 int mtkfb_set_backlight_level(unsigned int level)
 {
@@ -329,12 +359,34 @@ int mtkfb_set_backlight_level(unsigned int level)
 	MTKFB_FUNC();
 
 	DISPDBG("%s:%d Start\n", __func__, level);
-
+	#ifndef ODM_HQ_EDIT
+	/*
+	* Yongpeng.Yi@PSW.MM.Display.LCD.Machine, 2018/02/27,
+	* add for face fill light node,ffl set need after backlight on.
+	*/
 	if (aal_is_support)
 		primary_display_setbacklight_nolock(level);
 	else
 		primary_display_setbacklight(level);
-
+	#else /* ODM_HQ_EDIT */
+	if (level > 0) {
+		ffl_backlight_on = 1;
+	} else {
+		ffl_backlight_on = 0;
+	}
+	ffl_backlight_backup = level;
+	if (ffl_trigger_finish || (level == 0)) {
+		if ((ffl_set_mode != 1) || (level == 0)) {
+			if (aal_is_support)
+				primary_display_setbacklight_nolock(level);
+			else
+				primary_display_setbacklight(level);
+		}
+		if ((level > 0) && (ffl_set_mode == 1)) {
+			ffl_set_enable(1);
+		}
+	}
+	#endif /* ODM_HQ_EDIT */
 	DISPDBG("%s End\n", __func__);
 	return 0;
 }
@@ -2422,6 +2474,28 @@ int pan_display_test(int frame_num, int bpp)
 	return 0;
 }
 
+#ifdef ODM_HQ_EDIT
+/*sunjingtao@ODM.BSP.System  2019/9/7 add for devinfo*/
+void meta_display(unsigned int color){
+	unsigned int j = 0;
+	unsigned long fb_va;
+	unsigned long fb_pa;
+	unsigned int *fb_start;
+	unsigned int fbsize = primary_display_get_height() * primary_display_get_width();
+
+	mtkfb_fbi->var.yoffset = 0;
+	disp_get_fb_address(&fb_va, &fb_pa);
+	fb_start = (unsigned int *)fb_va;
+
+	for (j = 0; j < fbsize; j++){
+		*fb_start = color;
+		fb_start++;
+	}
+	mtkfb_pan_display_impl(&mtkfb_fbi->var, mtkfb_fbi);
+	return;
+}
+#endif
+
 /* #define FPGA_DEBUG_PAN */
 #ifdef FPGA_DEBUG_PAN
 static struct task_struct *test_task;
@@ -2521,6 +2595,13 @@ static int mtkfb_probe(struct platform_device *pdev)
 
 	/* pdev = to_platform_device(dev); */
 	/* repo call DTS gpio module, if not necessary, invoke nothing */
+
+	#ifdef ODM_HQ_EDIT
+		/* Hao.Lin@MM.Display.LCD.Machine, 2019/11/07, modify for oppo lcd feature */
+		oppo_display_ffl_support = of_property_read_bool(pdev->dev.of_node, "oppo_display_ffl_support");
+		oppo_display_sau_support = of_property_read_bool(pdev->dev.of_node, "oppo_display_sau_support");
+	#endif /*ODM_HQ_EDIT*/
+
 	dts_gpio_state = disp_dts_gpio_init_repo(pdev);
 	if (dts_gpio_state)
 		dev_err(&pdev->dev, "retrieve GPIO DTS failed.");
@@ -2777,7 +2858,10 @@ static void mtkfb_early_suspend(void)
 
 	if (disp_helper_get_stage() != DISP_HELPER_STAGE_NORMAL)
 		return;
-
+#ifdef VENDOR_EDIT
+	//jie.cheng@Swdp.shanghai, 2017/06/05, Add notifier for fb info
+	blocking_notifier_call_chain(&mtkfb_notifier_list, 0, NULL);
+#endif
 	DISPMSG("%s+\n", __func__);
 
 	ret = primary_display_suspend();
@@ -2806,7 +2890,10 @@ static void mtkfb_late_resume(void)
 
 	if (disp_helper_get_stage() != DISP_HELPER_STAGE_NORMAL)
 		return;
-
+#ifdef VENDOR_EDIT
+	//jie.cheng@Swdp.shanghai, 2017/06/05, Add notifier for fb info
+		blocking_notifier_call_chain(&mtkfb_notifier_list, 1, NULL);
+#endif
 	DISPMSG("%s+\n", __func__);
 
 	ret = primary_display_resume();

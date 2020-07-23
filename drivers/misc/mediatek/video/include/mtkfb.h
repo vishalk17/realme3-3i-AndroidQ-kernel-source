@@ -401,6 +401,12 @@ struct mtkfb_device {
 
 #endif				/* __KERNEL__ */
 
+#ifdef VENDOR_EDIT
+//jie.cheng@Swdp.shanghai, 2017/06/05, Add notifier for fb info
+extern int mtkfb_register_client(struct notifier_block *nb);
+extern int mtkfb_unregister_client(struct notifier_block *nb);
+#endif
+
 extern long hdmi_handle_cmd(unsigned int cmd, unsigned long arg);
 
 #if defined(CONFIG_MACH_MT6797)

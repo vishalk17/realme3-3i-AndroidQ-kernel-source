@@ -27,6 +27,11 @@
 #include "ccci_swtp.h"
 #include "ccci_fsm.h"
 
+#ifdef ODM_HQ_EDIT
+//panxiaolong_hq@vanyol.com, 2018/12/11, Add for SWTP - RF cable detection
+#include <linux/proc_fs.h>
+static unsigned int swtp_status_value = SWTP_EINT_PIN_PLUG_OUT;
+#endif  /*ODM_HQ_EDIT*/
 const struct of_device_id swtp_of_match[] = {
 	{ .compatible = SWTP_COMPATIBLE_DEVICE_ID, },
 	{},
@@ -90,6 +95,10 @@ static int swtp_switch_mode(struct swtp_t *swtp)
 		__func__, swtp->curr_mode);
 	spin_unlock_irqrestore(&swtp->spinlock, flags);
 
+#ifdef ODM_HQ_EDIT
+	//panxiaolong_hq@vanyol.com, 2019/12/11, Add for SWTP - RF cable detection
+	swtp_status_value = swtp->curr_mode;
+#endif /*ODM_HQ_EDIT*/
 	return ret;
 }
 
@@ -145,7 +154,7 @@ static irqreturn_t swtp_irq_func(int irq, void *data)
 {
 	struct swtp_t *swtp = (struct swtp_t *)data;
 	int ret = 0;
-
+	printk("swtp_irq_func +++\n");
 	ret = swtp_switch_mode(swtp);
 	if (ret < 0) {
 		CCCI_LEGACY_ERR_LOG(swtp->md_id, SYS,
@@ -158,7 +167,7 @@ static irqreturn_t swtp_irq_func(int irq, void *data)
 				"%s send tx power failed in irq, ret=%d,and retry late\n",
 				__func__, ret);
 	}
-
+	printk("swtp_irq_func ---\n");
 	return IRQ_HANDLED;
 }
 
@@ -186,6 +195,32 @@ int swtp_md_tx_power_req_hdlr(int md_id, int data)
 	ret = swtp_send_tx_power_mode(swtp);
 	return 0;
 }
+
+#ifdef ODM_HQ_EDIT
+//panxiaolong_hq@vanyol.com, 2019/12/11, Add for SWTP - RF cable detection
+static int swtp_gpio_show(struct seq_file *m, void *v)
+{
+	seq_printf(m, "%d\n", swtp_status_value);
+	return 0;
+}
+
+static int swtp_gpio_proc_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, swtp_gpio_show, NULL);
+}
+
+static const struct file_operations swtp_gpio_fops = {
+	.open	= swtp_gpio_proc_open,
+	.read	= seq_read,
+	.llseek	= seq_lseek,
+	.release = single_release,
+};
+
+static void swtp_gpio_create_proc(void)
+{
+	proc_create("swtp_status_value", 0444, NULL, &swtp_gpio_fops);
+}
+#endif  /*ODM_HQ_EDIT*/
 
 int swtp_init(int md_id)
 {
@@ -246,6 +281,11 @@ int swtp_init(int md_id)
 	}
 	register_ccci_sys_call_back(md_id, MD_SW_MD1_TX_POWER_REQ,
 		swtp_md_tx_power_req_hdlr);
+	
+#ifdef ODM_HQ_EDIT
+	//panxiaolong_hq@vanyol.com, 2019/12/11, Add for SWTP - RF cable detection
+	swtp_gpio_create_proc();
+#endif  /*ODM_HQ_EDIT*/	
 	return ret;
 }
 

@@ -57,6 +57,17 @@ struct flashlight_user_arg {
 	int arg;
 };
 
+/* flash type enum */
+typedef enum {
+	FLASHLIGHT_NONE = 0,
+	FLASHLIGHT_LED_ONOFF,    /* LED always on/off */
+	FLASHLIGHT_LED_CONSTANT, /* CONSTANT type LED */
+	FLASHLIGHT_LED_PEAK,     /* peak strobe type LED */
+	FLASHLIGHT_LED_TORCH,    /* LED turn on when switch FLASH_ON */
+	FLASHLIGHT_XENON_SCR,    /* SCR strobe type Xenon */
+	FLASHLIGHT_XENON_IGBT    /* IGBT strobe type Xenon */
+} FLASHLIGHT_TYPE_ENUM;
+
 /* ioctl magic number */
 #define FLASHLIGHT_MAGIC 'S'
 
@@ -112,6 +123,11 @@ struct flashlight_user_arg {
 #define FLASH_IOC_GET_HW_TIMEOUT           _IOWR(FLASHLIGHT_MAGIC, 240, int)
 #define FLASH_IOC_GET_HW_FAULT             _IOR(FLASHLIGHT_MAGIC, 250, int)
 #define FLASH_IOC_GET_HW_FAULT2            _IOR(FLASHLIGHT_MAGIC, 251, int)
+
+#ifdef ODM_HQ_EDIT
+/*Houbing.Peng@ODM Cam.Drv 20200319 set flash mode to driver*/
+#define FLASH_IOC_SET_FLASH_MODE            _IOWR(FLASHLIGHT_MAGIC, 256, int)
+#endif
 
 #endif /* _FLASHLIGHT_H */
 

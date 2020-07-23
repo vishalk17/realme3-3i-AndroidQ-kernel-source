@@ -102,6 +102,10 @@ int pmic_get_vbus(void)
 	vchr = 5001;
 #else
 	vchr = pmic_get_auxadc_value(AUXADC_LIST_VCDT);
+//#if defined(ODM_HQ_EDIT) && defined(CONFIG_MACH_MT6771)
+/* Wangchao@ODM.HQ.Charger 2020/3/6 modified for bring up charging */
+//	return vchr * 10;
+//#endif
 	vchr =
 		(((fg_cust_data.r_charger_1 +
 		fg_cust_data.r_charger_2) * 100 * vchr) /

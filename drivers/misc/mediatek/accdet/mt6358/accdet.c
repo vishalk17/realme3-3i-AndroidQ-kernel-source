@@ -49,6 +49,12 @@
 #endif /* end of #if PMIC_ACCDET_KERNEL */
 
 /********************grobal variable definitions******************/
+#ifdef VENDOR_EDIT
+/* Bingyuan.Liu@BSP.TP.FUNCTION, 2019/10/25,
+ * add to enable tp headset mode when plug in  */
+void __attribute__((weak)) switch_headset_state(int headset_state) {return;}
+#endif /* VENDOR_EDIT */
+
 #if PMIC_ACCDET_CTP
 #define CONFIG_ACCDET_EINT_IRQ
 #define CONFIG_ACCDET_SUPPORT_EINT0
@@ -1232,6 +1238,12 @@ static void eint_work_callback(void)
 #else
 		enable_accdet(ACCDET_PWM_EN);
 #endif
+
+#ifdef VENDOR_EDIT
+/* Bingyuan.Liu@BSP.TP.FUNCTION, 2019/10/25,
+ * add to enable tp headset mode when plug in  */
+		switch_headset_state(1);
+#endif /* VENDOR_EDIT */
 	} else {
 		pr_info("accdet cur:plug-out, cur_eint_state = %d\n",
 			cur_eint_state);
@@ -1245,6 +1257,11 @@ static void eint_work_callback(void)
 			pmic_read(ACCDET_STATE_SWCTRL) & (~ACCDET_PWM_IDLE));
 		disable_accdet();
 		headset_plug_out();
+#ifdef VENDOR_EDIT
+/* Bingyuan.Liu@BSP.TP.FUNCTION, 2019/10/25,
+ * add to enable tp headset mode when plug in  */
+		switch_headset_state(0);
+#endif /* VENDOR_EDIT */
 	}
 
 #ifdef CONFIG_ACCDET_EINT

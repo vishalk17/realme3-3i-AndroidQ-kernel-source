@@ -128,6 +128,7 @@ static int ccu_suspend(struct platform_device *dev, pm_message_t mesg);
 
 static int ccu_resume(struct platform_device *dev);
 
+static int32_t _clk_count;
 /*-------------------------------------------------------------------------*/
 /* CCU Driver: pm operations                                               */
 /*-------------------------------------------------------------------------*/
@@ -436,6 +437,8 @@ static int ccu_open(struct inode *inode, struct file *flip)
 
 	struct ccu_user_s *user;
 
+	_clk_count = 0;
+
 	ccu_create_user(&user);
 	if (IS_ERR_OR_NULL(user)) {
 		LOG_ERR("fail to create user\n");
@@ -580,7 +583,11 @@ int ccu_clock_enable(void)
 {
 	int ret;
 
-	LOG_DBG_MUST("%s+\n", __func__);
+	LOG_DBG_MUST("%s %d.\n", __func__, _clk_count);
+
+	mutex_lock(&g_ccu_device->clk_mutex);
+	_clk_count++;
+
 	ccu_qos_init();
 
 	ret = clk_prepare_enable(ccu_clk_ctrl[0]);
@@ -593,17 +600,24 @@ int ccu_clock_enable(void)
 	if (ret)
 		LOG_ERR("CCU_CLK_CAM_CCU enable fail.\n");
 
+	mutex_unlock(&g_ccu_device->clk_mutex);
 	return ret;
 }
 
 void ccu_clock_disable(void)
 {
-	LOG_DBG_MUST("%s.\n", __func__);
-	clk_disable_unprepare(ccu_clk_ctrl[2]);
-	clk_disable_unprepare(ccu_clk_ctrl[1]);
-	clk_disable_unprepare(ccu_clk_ctrl[0]);
+	LOG_DBG_MUST("%s %d.\n", __func__, _clk_count);
+
+	mutex_lock(&g_ccu_device->clk_mutex);
+	if (_clk_count > 0) {
+		clk_disable_unprepare(ccu_clk_ctrl[2]);
+		clk_disable_unprepare(ccu_clk_ctrl[1]);
+		clk_disable_unprepare(ccu_clk_ctrl[0]);
+		_clk_count--;
+	}
 
 	ccu_qos_uninit();
+	mutex_unlock(&g_ccu_device->clk_mutex);
 }
 
 static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
@@ -1175,12 +1189,10 @@ static int ccu_probe(struct platform_device *pdev)
 		devm_clk_get(g_ccu_device->dev, "CCU_CLK_MMSYS_CCU");
 		if (ccu_clk_ctrl[0] == NULL)
 			LOG_ERR("Get CCU_CLK_MMSYS_CCU fail.\n");
-
 		ccu_clk_ctrl[1] =
 		devm_clk_get(g_ccu_device->dev, "CAM_PWR");
 		if (ccu_clk_ctrl[1] == NULL)
 			LOG_ERR("Get CAM_PWR fail.\n");
-
 		ccu_clk_ctrl[2] =
 		devm_clk_get(g_ccu_device->dev, "CCU_CLK_CAM_CCU");
 		if (ccu_clk_ctrl[2] == NULL)
@@ -1337,6 +1349,7 @@ static int __init CCU_INIT(void)
 
 	INIT_LIST_HEAD(&g_ccu_device->user_list);
 	mutex_init(&g_ccu_device->user_mutex);
+	mutex_init(&g_ccu_device->clk_mutex);
 	mutex_init(&g_ccu_device->ion_client_mutex);
 	init_waitqueue_head(&g_ccu_device->cmd_wait);
 

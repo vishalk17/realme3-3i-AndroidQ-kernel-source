@@ -232,11 +232,13 @@ int is_infra_timeout(void)
 {
 	int ctrl = 0;
 
+#ifdef ODM_HQ_EDIT
+	/* longyajun@ODM.Multimedia.LCD  2019/11/04 add for ESD Check reboot wthout lcm */
 	if (!lb->infra_base) {
 		pr_info("%s:%d: not ready\n", __func__, __LINE__);
 		return -1;
-	}
-
+		}
+#endif //ODM_HQ_EDIT
 	ctrl = (readl(lb->infra_base +
 		lb->infrasys_offsets.bus_infra_ctrl)) & 0x1;
 
@@ -247,11 +249,13 @@ int is_peri_timeout(void)
 {
 	int ctrl = 0;
 
+#ifdef ODM_HQ_EDIT
+	/* longyajun@ODM.Multimedia.LCD  2019/11/04 add for ESD Check reboot wthout lcm */
 	if (!lb->peri_base) {
 		pr_info("%s:%d: not ready\n", __func__, __LINE__);
 		return -1;
-	}
-
+		}
+#endif //ODM_HQ_EDIT
 	ctrl = (readl(lb->peri_base +
 		lb->perisys_offsets.bus_peri_r1)) & 0x1;
 

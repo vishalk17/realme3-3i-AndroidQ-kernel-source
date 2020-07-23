@@ -28,6 +28,7 @@ subdir-ccflags-y += -I$(srctree)/drivers/i2c/busses/
 # Common code
 obj-y += ../common/$(COMMON_VERSION)/eeprom_driver.o
 obj-y += ../common/$(COMMON_VERSION)/eeprom_i2c_common_driver.o
+obj-y += P24C64E/
 
 # Platform code
 obj-y += eeprom_i2c_custom_driver.o

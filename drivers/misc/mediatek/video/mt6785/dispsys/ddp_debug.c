@@ -137,6 +137,33 @@ void _ddic_test_read(void)
 	vfree(cmd_tab.payload);
 }
 
+#ifdef ODM_HQ_EDIT
+//panxiaolong@ODM.Multimedia.LCD  2020/01/15 add for read nova reg for mipi error
+void _ddic_mipi_error_read(void)
+{
+	struct dsi_cmd_desc cmd_tab;
+	printk("_ddic_mipi_error_read +++\n");
+	/*read lcm id*/
+	memset(&cmd_tab, 0, sizeof(struct dsi_cmd_desc));
+	cmd_tab.dtype = 0xab;
+	cmd_tab.payload = vmalloc(1 * sizeof(unsigned char));
+	if (cmd_tab.payload == NULL) {
+		DDPMSG("[DISP]%s: vmalloc fail.\n", __func__);
+		return;
+	}
+	*cmd_tab.payload = 0;
+	cmd_tab.dlen = 2;
+
+	do_lcm_vdo_lp_read(&cmd_tab, 1);
+	DDPMSG("read lcm addr:0x%x, len:%d, val:0x%x\n",
+		cmd_tab.dtype, cmd_tab.dlen, *cmd_tab.payload);
+	printk("read lcm addr:0x%x, len:%d, val:0x%x\n",
+		cmd_tab.dtype, cmd_tab.dlen, *cmd_tab.payload);
+
+	vfree(cmd_tab.payload);
+}
+#endif
+
 void _ddic_test_write(void)
 {
 	struct dsi_cmd_desc cmd_tab;

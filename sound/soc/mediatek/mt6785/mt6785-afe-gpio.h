@@ -16,4 +16,9 @@ int mt6785_afe_gpio_init(struct mtk_base_afe *afe);
 int mt6785_afe_gpio_request(struct mtk_base_afe *afe, bool enable,
 			    int dai, int uplink);
 
+#ifdef ODM_HQ_EDIT
+/*fanxiongnan@ODM.HQ.Multimedia.Audio 2019/08/15 modified for speaker bringup */
+int mt6785_afe_gpio_extamp_select(struct mtk_base_afe *afe, bool enable, int mode);
+#endif /* ODM_HQ_EDIT */
+
 #endif

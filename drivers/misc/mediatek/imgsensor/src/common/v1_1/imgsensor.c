@@ -56,6 +56,9 @@
 #include "imgsensor_ca.h"
 #endif
 
+#ifndef VENDOR_EDIT
+#define VENDOR_EDIT
+#endif
 static DEFINE_MUTEX(gimgsensor_mutex);
 static DEFINE_MUTEX(gimgsensor_open_mutex);
 
@@ -92,7 +95,198 @@ void IMGSENSOR_PROFILE(struct timeval *ptv, char *tag)
 {
 }
 #endif
+#ifdef VENDOR_EDIT
+/* Add by LiuBin for register device info at 20160616 */
+#include <soc/oppo/device_info.h>
+#define DEVICE_MANUFACUTRE_NA		    "None"
+#define DEVICE_MANUFACUTRE_SUNNY        "Sunny"
+#define DEVICE_MANUFACUTRE_TRULY        "Truly"
+#define DEVICE_MANUFACUTRE_SEMCO        "Semco"
+#define DEVICE_MANUFACUTRE_LITEON       "Liteon"
+#define DEVICE_MANUFACUTRE_QTECH        "Qtech"
+#define DEVICE_MANUFACUTRE_OFILM        "Ofilm"
+#define DEVICE_MANUFACUTRE_SHINE        "Shine"
+#ifdef ODM_HQ_EDIT
+/*Degao.Lan@Camera.DRV add for register device info 20191108*/
+#define DEVICE_MANUFACUTRE_HOLITECH     "Holitech"
+#endif
 
+#define IMGSENSOR_MODULE_ID_SUNNY       0x01
+#define IMGSENSOR_MODULE_ID_TRULY       0x02
+#define IMGSENSOR_MODULE_ID_SEMCO       0x03
+#define IMGSENSOR_MODULE_ID_LITEON      0x04
+#define IMGSENSOR_MODULE_ID_QTECH       0x05
+#define IMGSENSOR_MODULE_ID_OFILM       0x06
+#define IMGSENSOR_MODULE_ID_SHINE       0x07
+#ifdef ODM_HQ_EDIT
+/*Degao.Lan@Camera.DRV add for register device info 20191108*/
+#define IMGSENSOR_MODULE_ID_HOLITECH    0x09
+#endif
+
+#ifdef ODM_HQ_EDIT
+/* Houbing.Peng@ODM_HQ Cam.Drv 20191123 add for golden value check */
+#define AWB_GOLDEN_ADDR_NUM 3
+#define AWB_GOLDEN_TABLE_SIZE 12
+static kal_uint16 awb_golden_addr_s5kgw1[AWB_GOLDEN_ADDR_NUM] = {
+    0x0018, 0x002A, 0x003C
+};
+static kal_uint16 awb_golden_table_s5kgw1[AWB_GOLDEN_TABLE_SIZE] = {
+    466, 745, 745, 462,  //5100K
+    541, 745, 744, 406,  //4000k
+    619, 747, 744, 282   //3100k
+};
+
+static kal_uint16 awb_golden_addr_s5k3p9sp[AWB_GOLDEN_ADDR_NUM] = {
+    0x0014, 0x005C, 0x003A
+};
+static kal_uint16 awb_golden_table_s5k3p9sp[AWB_GOLDEN_TABLE_SIZE] = {
+     95, 184, 185, 125,  //5100K
+    105, 175, 175, 100,  //4000k
+    128, 185, 186,  70   //3100k
+};
+
+static kal_uint16 awb_golden_addr_ov8856[AWB_GOLDEN_ADDR_NUM] = {
+    0x0018, 0x002A, 0x003C
+};
+static kal_uint16 awb_golden_table_ov8856[AWB_GOLDEN_TABLE_SIZE] = {
+    104, 185, 185, 127,  //5100K
+    120, 185, 185, 114,  //4000k
+    137, 183, 183,  96   //3100k
+};
+
+static kal_uint16 awb_golden_addr_gc2375h[AWB_GOLDEN_ADDR_NUM] = {
+    0x0016, 0x0028, 0x003A
+};
+static kal_uint16 awb_golden_table_gc2375h[AWB_GOLDEN_TABLE_SIZE] = {
+    121, 183, 185,  99,  //5100K
+    142, 183, 185,  89,  //4000k
+    165, 184, 185,  71   //3100k
+};
+
+static kal_uint16 awb_golden_addr_s5kgm1sp[AWB_GOLDEN_ADDR_NUM] = {
+    0x0018, 0x002A, 0x003C
+};
+static kal_uint16 awb_golden_table_s5kgm1sp[AWB_GOLDEN_TABLE_SIZE] = {
+    0x6d, 0xbc, 0xbc, 0x78,  //5100K
+    0x80, 0xbc, 0xbc, 0x6c,  //4000k
+    0x93, 0xbc, 0xbc, 0x52   //3100k
+};
+
+static kal_uint16 awb_golden_addr_gc2385h[AWB_GOLDEN_ADDR_NUM] = {
+    0x0016, 0x0028, 0x003A
+};
+static kal_uint16 awb_golden_table_gc2385h[AWB_GOLDEN_TABLE_SIZE] = {
+    166, 189, 189,  132,  //5100K
+    177, 180, 180,  113,  //4000k
+    204, 185, 184,  95   //3100k
+};
+
+
+extern int iReadRegI2C(u8 *a_pSendData , u16 a_sizeSendData, u8 * a_pRecvData, u16 a_sizeRecvData, u16 i2cId);
+
+kal_uint8 check_eeprom_awb_golden(kal_uint16 sensor_id, kal_uint8 i2c_addr)
+{
+    kal_uint8 i;
+    kal_uint8 get_byte[2*AWB_GOLDEN_TABLE_SIZE] = {0};
+    kal_uint16 get_table[AWB_GOLDEN_TABLE_SIZE] = {0};
+    kal_uint8 check_result = 0;
+    const kal_uint16* awb_golden_addr = NULL;
+    const kal_uint16* awb_golden_table = NULL;
+
+    switch (sensor_id) {
+    case S5KGW1_SENSOR_ID:
+        awb_golden_addr = awb_golden_addr_s5kgw1;
+        awb_golden_table = awb_golden_table_s5kgw1;
+        break;
+    case S5KGM1SP_SENSOR_ID:
+        awb_golden_addr = awb_golden_addr_s5kgm1sp;
+        awb_golden_table = awb_golden_table_s5kgm1sp;
+        break;
+    case S5K3P9SP_SENSOR_ID:
+        awb_golden_addr = awb_golden_addr_s5k3p9sp;
+        awb_golden_table = awb_golden_table_s5k3p9sp;
+        break;
+    case OV8856_SENSOR_ID:
+        awb_golden_addr = awb_golden_addr_ov8856;
+        awb_golden_table = awb_golden_table_ov8856;
+        break;
+    case GC2375H_SENSOR_ID:
+        awb_golden_addr = awb_golden_addr_gc2375h;
+        awb_golden_table = awb_golden_table_gc2375h;
+        break;
+    case GC02K0_SENSOR_ID:
+        awb_golden_addr = awb_golden_addr_gc2385h;
+        awb_golden_table = awb_golden_table_gc2385h;
+        break;
+    default:
+        printk("%s unsupported sensor_id:%d\n", __func__, sensor_id);
+        return check_result;
+    }
+
+    for (i = 0; i < AWB_GOLDEN_ADDR_NUM; i++) {
+        char pu_send_cmd[2] = { (char)(awb_golden_addr[i] >> 8), (char)(awb_golden_addr[i] & 0xFF) };
+        iReadRegI2C(pu_send_cmd, 2, (u8 *)&get_byte[i*8], 8, i2c_addr);
+    }
+    for (i = 0; i < AWB_GOLDEN_TABLE_SIZE; i++) {
+        get_table[i] = ((get_byte[2*i+1] << 8) | (get_byte[2*i]));
+    }
+
+    if (!memcmp(awb_golden_table, get_table, 4)
+        && !memcmp(awb_golden_table + 8, &get_table[8], 4)) {
+        printk("%s sensor_id:0x%x, golden value matched ^_^\n", __func__, sensor_id);
+        check_result = 1;
+    } else {
+        printk("%s sensor_id:0x%x, get_golden:0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,\n", __func__, sensor_id,
+            get_table[0], get_table[1],get_table[2],get_table[3],get_table[8],get_table[9],get_table[10],get_table[11]);
+    }
+
+    return check_result;
+}
+#endif
+
+void register_imgsensor_deviceinfo(char *name, char *version, u8 module_id)
+{
+    char *manufacture;
+    if (name == NULL || version == NULL)
+    {
+        PK_PR_ERR("name or version is NULL");
+        return;
+    }
+    switch (module_id)
+    {
+        case IMGSENSOR_MODULE_ID_SUNNY:  /* Sunny */
+            manufacture = DEVICE_MANUFACUTRE_SUNNY;
+            break;
+        case IMGSENSOR_MODULE_ID_TRULY:  /* Truly */
+            manufacture = DEVICE_MANUFACUTRE_TRULY;
+            break;
+        case IMGSENSOR_MODULE_ID_SEMCO:  /* Semco */
+            manufacture = DEVICE_MANUFACUTRE_SEMCO;
+            break;
+        case IMGSENSOR_MODULE_ID_LITEON:  /* Lite-ON */
+            manufacture = DEVICE_MANUFACUTRE_LITEON;
+            break;
+        case IMGSENSOR_MODULE_ID_QTECH:  /* Q-Tech */
+            manufacture = DEVICE_MANUFACUTRE_QTECH;
+            break;
+        case IMGSENSOR_MODULE_ID_OFILM:  /* O-Film */
+            manufacture = DEVICE_MANUFACUTRE_OFILM;
+            break;
+        case IMGSENSOR_MODULE_ID_SHINE:  /* Shine */
+            manufacture = DEVICE_MANUFACUTRE_SHINE;
+            break;
+        #ifdef ODM_HQ_EDIT
+        /*Degao.Lan@Camera.DRV add for register device info 20191108*/
+        case IMGSENSOR_MODULE_ID_HOLITECH:  /* Holitech */
+            manufacture = DEVICE_MANUFACUTRE_HOLITECH;
+            break;
+        #endif
+        default:
+            manufacture = DEVICE_MANUFACUTRE_NA;
+    }
+    register_device_proc(name, version, manufacture);
+}
+#endif
 /******************************************************************************
  * sensor function adapter
  ******************************************************************************/
@@ -149,7 +343,7 @@ MINT32 imgsensor_sensor_open(struct IMGSENSOR_SENSOR *psensor)
 #endif
 	struct IMGSENSOR             *pimgsensor   = &gimgsensor;
 	struct IMGSENSOR_SENSOR_INST *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT       *psensor_func =  psensor->pfunc;
 
 #ifdef CONFIG_MTK_CCU
 	struct ccu_sensor_info ccuSensorInfo;
@@ -241,7 +435,7 @@ imgsensor_sensor_get_info(
 {
 	MUINT32 ret = ERROR_NONE;
 	struct IMGSENSOR_SENSOR_INST *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT       *psensor_func =  psensor->pfunc;
 
 	IMGSENSOR_FUNCTION_ENTRY();
 
@@ -278,7 +472,7 @@ imgsensor_sensor_get_resolution(
 {
 	MUINT32 ret = ERROR_NONE;
 	struct IMGSENSOR_SENSOR_INST *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT       *psensor_func =  psensor->pfunc;
 
 	IMGSENSOR_FUNCTION_ENTRY();
 
@@ -315,7 +509,7 @@ imgsensor_sensor_feature_control(
 	struct command_params c_params;
 #endif
 	struct IMGSENSOR_SENSOR_INST  *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT        *psensor_func =  psensor->pfunc;
 
 	IMGSENSOR_FUNCTION_ENTRY();
 
@@ -366,7 +560,7 @@ imgsensor_sensor_control(
 	struct command_params c_params;
 #endif
 	struct IMGSENSOR_SENSOR_INST *psensor_inst = &psensor->inst;
-	struct SENSOR_FUNCTION_STRUCT *psensor_func =  psensor->pfunc;
+	struct SENSOR_FUNCTION_STRUCT       *psensor_func =  psensor->pfunc;
 
 	MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT image_window;
 	MSDK_SENSOR_CONFIG_STRUCT sensor_config_data;
@@ -1243,15 +1437,13 @@ static inline int adopt_CAMERA_HW_FeatureControl(void *pBuf)
 			void *usr_ptr =
 				(void *)(uintptr_t) (*(pFeaturePara_64 + 1));
 
-			pPdInfo = kmalloc(sizeof(struct SET_PD_BLOCK_INFO_T),
-					GFP_KERNEL);
+			pPdInfo = kmalloc(sizeof(struct SET_PD_BLOCK_INFO_T), GFP_KERNEL);
 			if (pPdInfo == NULL) {
 				kfree(pFeaturePara);
 				PK_PR_ERR(" ioctl allocate mem failed\n");
 				return -ENOMEM;
 			}
-			memset(pPdInfo, 0x0,
-				sizeof(struct SET_PD_BLOCK_INFO_T));
+			memset(pPdInfo, 0x0, sizeof(struct SET_PD_BLOCK_INFO_T));
 			*(pFeaturePara_64 + 1) = (uintptr_t) pPdInfo;
 
 			ret = imgsensor_sensor_feature_control(psensor,
@@ -1260,8 +1452,7 @@ static inline int adopt_CAMERA_HW_FeatureControl(void *pBuf)
 					(unsigned int *)&FeatureParaLen);
 
 			if (copy_to_user((void __user *)usr_ptr,
-					(void *)pPdInfo,
-					sizeof(struct SET_PD_BLOCK_INFO_T))) {
+					 (void *)pPdInfo, sizeof(struct SET_PD_BLOCK_INFO_T))) {
 
 				PK_DBG("[CAMERA_HW]ERROR: copy_to_user fail\n");
 			}

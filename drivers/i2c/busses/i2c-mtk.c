@@ -455,6 +455,7 @@ static inline void mt_i2c_wait_done(struct mt_i2c *i2c, u16 ch_off)
 
 static inline void mt_i2c_init_hw(struct mt_i2c *i2c)
 {
+
 	/* clear interrupt status */
 	i2c_writew_shadow(0, i2c, OFFSET_INTR_MASK);
 	i2c->irq_stat = i2c_readw_shadow(i2c, OFFSET_INTR_STAT);
@@ -488,6 +489,7 @@ static inline void mt_i2c_init_hw(struct mt_i2c *i2c)
 		dump_dma_regs();
 		WARN_ON(1);
 	}
+
 }
 
 /* calculate i2c port speed */
@@ -912,8 +914,11 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 		control_reg |= I2C_CONTROL_RS;
 	if (i2c->op == I2C_MASTER_WRRD)
 		control_reg |= I2C_CONTROL_DIR_CHANGE | I2C_CONTROL_RS;
+	#ifdef CONFIG_MACH_MT6768
+	/* zuoqiquan@ODM.BSP.Sensor  2020/03/12 ,fix MT6768 nfc i2c error */
 	if (i2c->dev_comp->control_irq_sel == 1)
 		control_reg |= I2C_CONTROL_IRQ_SEL;
+	#endif /*CONFIG_MACH_MT6768*/
 	i2c_writew(control_reg, i2c, OFFSET_CONTROL);
 
 	/* set start condition */
@@ -962,8 +967,14 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 		  I2C_TRANSAC_COMP | I2C_ARB_LOST;
 	if (i2c->dev_comp->ver == 0x2)
 		int_reg |= I2C_BUS_ERR | I2C_TIMEOUT;
+	#ifdef CONFIG_MACH_MT6768
+	/* zuoqiquan@ODM.BSP.Sensor  2020/03/12 ,fix MT6768 nfc i2c error */
 	if (i2c->ch_offset || (i2c->dev_comp->control_irq_sel == 1))
 		int_reg &= ~(I2C_HS_NACKERR | I2C_ACKERR);
+	#else
+	if (i2c->ch_offset)
+		int_reg &= ~(I2C_HS_NACKERR | I2C_ACKERR);
+	#endif /*CONFIG_MACH_MT6768*/
 	/* Clear interrupt status */
 	i2c_writew(I2C_INTR_ALL, i2c, OFFSET_INTR_STAT);
 	if (i2c->ch_offset != 0)
@@ -999,10 +1010,13 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 
 	/* Prepare buffer data to start transfer */
 	if (isDMA == true && (!i2c->is_ccu_trig)) {
+		#ifdef CONFIG_MACH_MT6768
+		/* zuoqiquan@ODM.BSP.Sensor  2020/03/12 ,fix MT6768 nfc i2c error */
 		if (i2c_readl_dma(i2c, OFFSET_EN)) {
 			i2c_writel_dma(I2C_DMA_WARM_RST, i2c, OFFSET_RST);
 			udelay(5);
 		}
+		#endif /*CONFIG_MACH_MT6768*/
 #ifdef CONFIG_MTK_LM_MODE
 		if ((i2c->dev_comp->dma_support == 1) && (enable_4G())) {
 			i2c_writel_dma(0x1, i2c, OFFSET_TX_MEM_ADDR2);
@@ -1183,10 +1197,22 @@ static int mt_i2c_do_transfer(struct mt_i2c *i2c)
 		return -EREMOTEIO;
 	}
 	if (i2c->op != I2C_MASTER_WR && isDMA == false) {
+		#ifdef CONFIG_MACH_MT6768
+		/* zuoqiquan@ODM.BSP.Sensor  2020/03/12 ,fix MT6768 nfc i2c error */
 		if (i2c->op == I2C_MASTER_WRRD)
 			data_size = i2c->msg_aux_len;
 		else
 			data_size = i2c->msg_len;
+		#else
+		if (i2c->ch_offset != 0) {
+			if (i2c->op == I2C_MASTER_WRRD)
+				data_size = i2c->msg_aux_len;
+			else
+				data_size = i2c->msg_len;
+		} else
+			data_size = (i2c_readw(i2c, OFFSET_FIFO_STAT) >> 4)
+				& 0x000F;
+		#endif /*CONFIG_MACH_MT6768*/
 		ptr = i2c->dma_buf.vaddr;
 		while (data_size--) {
 			*ptr = i2c_readw(i2c, OFFSET_DATA_PORT);
@@ -1700,8 +1726,11 @@ int mt_i2c_parse_comp_data(void)
 		(u8 *)&i2c_common_compat.ver);
 	of_property_read_u8(comp_node, "cnt_constraint",
 		(u8 *)&i2c_common_compat.cnt_constraint);
+	#ifdef CONFIG_MACH_MT6768
+	/* zuoqiquan@ODM.BSP.Sensor  2020/03/12 ,fix MT6768 nfc i2c error */
 	of_property_read_u8(comp_node, "control_irq_sel",
 		(u8 *)&i2c_common_compat.control_irq_sel);
+	#endif /*CONFIG_MACH_MT6768*/
 	return 0;
 }
 

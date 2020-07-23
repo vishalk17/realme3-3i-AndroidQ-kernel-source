@@ -2218,10 +2218,18 @@ static int mt_mic_bias_0_event(struct snd_soc_dapm_widget *w,
 			break;
 		}
 
+		#ifndef ODM_HQ_EDIT
+		//fanxiongnan@ODM.HQ.Multimedia.Audio.BSP 2019/11/23 modified for micbias0 voltage setting
 		/* MISBIAS0 = 1P9V */
 		regmap_update_bits(priv->regmap, MT6359_AUDENC_ANA_CON15,
 				   RG_AUDMICBIAS0VREF_MASK_SFT,
 				   MIC_BIAS_1P9 << RG_AUDMICBIAS0VREF_SFT);
+		#else
+		/* MISBIAS0 = 2P7V */
+		regmap_update_bits(priv->regmap, MT6359_AUDENC_ANA_CON15,
+				   RG_AUDMICBIAS0VREF_MASK_SFT,
+				   MIC_BIAS_2P7 << RG_AUDMICBIAS0VREF_SFT);
+		#endif /* ODM_HQ_EIDT */
 		/* vow low power select */
 		regmap_update_bits(priv->regmap, MT6359_AUDENC_ANA_CON15,
 				   RG_AUDMICBIAS0LOWPEN_MASK_SFT,

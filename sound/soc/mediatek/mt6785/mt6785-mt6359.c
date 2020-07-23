@@ -15,6 +15,16 @@
 #include "mt6785-afe-gpio.h"
 #include "../../codecs/mt6359.h"
 #include "../common/mtk-sp-spk-amp.h"
+#ifdef ODM_HQ_EDIT
+//fanxiongnan@ODM.HQ.Multimedia.Audio 2019/11/06 added for SIA8109 speaker pa
+#ifdef CONFIG_SND_SOC_SIA8109
+#include "../sia81xx/sia81xx_aux_dev_if.h"
+
+//fanxiongnan@ODM.HQ.MM.Audio.BSP 2020/01/16 added to fix pop issue
+extern int sia81xx_power_on(void);
+extern int sia81xx_power_off(void);
+#endif /* CONFIG_SND_SOC_SIA8109 */
+#endif /* ODM_HQ_EDIT */
 
 /*
  * if need additional control for the ext spk amp that is connected
@@ -40,6 +50,50 @@ static const struct soc_enum mt6785_spk_type_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(mt6785_spk_i2s_type_str),
 			    mt6785_spk_i2s_type_str),
 };
+
+#ifdef ODM_HQ_EDIT
+/*fanxiongnan@ODM.HQ.Multimedia.Audio 2019/10/09 modified for aw87339 bringup */
+#ifdef CONFIG_SND_SOC_AW87339
+extern unsigned char aw87339_audio_kspk(void);
+extern unsigned char aw87339_audio_drcv(void);
+extern unsigned char aw87339_audio_off(void);
+//fanxiongnan@ODM.HQ.Multimedia.Audio 2019/12/06 added for aw87339 speaker & voice mode switch
+extern unsigned char aw87339_audio_voicespk(void);
+
+enum {
+	SPEAKER_SCENE_PLAYBACK = 0,
+	SPEAKER_SCENE_VOICE,
+	SPEAKER_SCENE_NUM
+};
+static int aw87339_speaker_scene = SPEAKER_SCENE_PLAYBACK;
+static const char *const aw87339_spk_scene[] = { "Playback", "Voice" };
+static const struct soc_enum aw87339_spk_scene_enum =
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(aw87339_spk_scene), aw87339_spk_scene);
+
+static int aw87339_spk_scene_get(struct snd_kcontrol *kcontrol,
+			       struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s() = %d\n", __func__, aw87339_speaker_scene);
+	ucontrol->value.integer.value[0] = aw87339_speaker_scene;
+	return 0;
+}
+
+static int aw87339_spk_scene_set(struct snd_kcontrol *kcontrol,
+			       struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s: ucontrol = %ldn", __func__, ucontrol->value.integer.value[0]);
+
+	if(SPEAKER_SCENE_NUM <= ucontrol->value.integer.value[0]) {
+		aw87339_speaker_scene = SPEAKER_SCENE_PLAYBACK;
+		pr_err("%s(): set speaker scene val = %ld !!! \r\n", __func__, ucontrol->value.integer.value[0]);
+	} else {
+		aw87339_speaker_scene = ucontrol->value.integer.value[0];
+	}
+
+	return 0;
+}
+#endif
+#endif /* ODM_HQ_EDIT */
 
 static int mt6785_spk_type_get(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
@@ -83,9 +137,36 @@ static int mt6785_mt6359_spk_amp_event(struct snd_soc_dapm_widget *w,
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
 		/* spk amp on control */
+		#ifdef ODM_HQ_EDIT
+		/*fanxiongnan@ODM.HQ.Multimedia.Audio 2019/10/09 modified for aw87339 bringup */
+		#ifdef CONFIG_SND_SOC_AW87339
+		if(aw87339_speaker_scene == SPEAKER_SCENE_PLAYBACK)
+			aw87339_audio_kspk();
+		else if(aw87339_speaker_scene == SPEAKER_SCENE_VOICE)
+			aw87339_audio_voicespk();
+		else
+			aw87339_audio_kspk();
+		#endif
+
+		//fanxiongnan@ODM.HQ.MM.Audio.BSP 2020/01/16 added to fix pop issue
+		#ifdef CONFIG_SND_SOC_SIA8109
+		sia81xx_power_on();
+		#endif
+		#endif /* ODM_HQ_EDIT */
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
 		/* spk amp off control */
+		#ifdef ODM_HQ_EDIT
+		/*fanxiongnan@ODM.HQ.Multimedia.Audio 2019/10/09 modified for aw87339 bringup */
+		#ifdef CONFIG_SND_SOC_AW87339
+		aw87339_audio_off();
+		#endif
+
+		//fanxiongnan@ODM.HQ.MM.Audio.BSP 2020/01/16 added to fix pop issue
+		#ifdef CONFIG_SND_SOC_SIA8109
+		sia81xx_power_off();
+		#endif
+		#endif /* ODM_HQ_EDIT */
 		break;
 	default:
 		break;
@@ -112,6 +193,11 @@ static const struct snd_kcontrol_new mt6785_mt6359_controls[] = {
 		     mt6785_spk_i2s_out_type_get, NULL),
 	SOC_ENUM_EXT("MTK_SPK_I2S_IN_TYPE_GET", mt6785_spk_type_enum[1],
 		     mt6785_spk_i2s_in_type_get, NULL),
+#ifdef ODM_HQ_EDIT
+//fanxiongnan@ODM.HQ.Multimedia.Audio 2019/12/06 added for aw87339 speaker & voice mode switch
+	SOC_ENUM_EXT("AW87339 Spk Scene", aw87339_spk_scene_enum,
+			aw87339_spk_scene_get, aw87339_spk_scene_set),
+#endif /* ODM_HQ_EDIT */
 };
 
 /*
@@ -1108,7 +1194,15 @@ static int mt6785_mt6359_dev_probe(struct platform_device *pdev)
 	}
 
 	card->dev = &pdev->dev;
-
+	#ifdef ODM_HQ_EDIT
+	//fanxiongnan@ODM.HQ.Multimedia.Audio 2019/11/06 added for SIA8109 speaker pa
+	#ifdef CONFIG_SND_SOC_SIA8109
+	ret = soc_aux_init_only_sia81xx(pdev, card);
+	if (ret)
+		dev_err(&pdev->dev, "%s soc_aux_init_only_sia8108 fail %d\n",
+			__func__, ret);
+	#endif /* CONFIG_SND_SOC_SIA8109 */
+	#endif /* ODM_HQ_EDIT */
 	ret = devm_snd_soc_register_card(&pdev->dev, card);
 	if (ret)
 		dev_err(&pdev->dev, "%s snd_soc_register_card fail %d\n",

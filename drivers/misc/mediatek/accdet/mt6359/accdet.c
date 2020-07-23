@@ -207,6 +207,11 @@ static bool debug_thread_en;
 static bool dump_reg;
 static struct task_struct *thread;
 
+#ifdef ODM_HQ_EDIT
+/*Benshan.Cheng@ODM_HQ.BSP.TP.Function, 2019/10/14 add for tp headset mode*/
+extern void switch_headset_state(int headset_state);
+#endif  /* ODM_HQ_EDIT */
+
 /*******************local function declaration******************/
 #ifdef CONFIG_ACCDET_EINT_IRQ
 static u32 config_moisture_detect_1_0(void);
@@ -1044,6 +1049,10 @@ static void send_accdet_status_event(u32 cable_type, u32 status)
 		input_sync(accdet_input_dev);
 		pr_info("%s HEADPHONE(3-pole) %s\n", __func__,
 			status ? "PlugIn" : "PlugOut");
+#ifdef ODM_HQ_EDIT
+/*Benshan.Cheng@ODM_HQ.BSP.TP.Function, 2019/10/14 add for tp headset mode*/
+		switch_headset_state(status);
+#endif  /* ODM_HQ_EDIT */
 		break;
 	case HEADSET_MIC:
 		/* when plug 4-pole out, 3-pole plug out should also be
@@ -1057,6 +1066,10 @@ static void send_accdet_status_event(u32 cable_type, u32 status)
 		input_sync(accdet_input_dev);
 		pr_info("%s MICROPHONE(4-pole) %s\n", __func__,
 			status ? "PlugIn" : "PlugOut");
+#ifdef ODM_HQ_EDIT
+		/*Benshan.Cheng@ODM_HQ.BSP.TP.Function, 2019/10/14 add for tp headset mode*/
+		switch_headset_state(status);
+#endif  /* ODM_HQ_EDIT */
 		break;
 	case LINE_OUT_DEVICE:
 		input_report_switch(accdet_input_dev, SW_LINEOUT_INSERT,
@@ -1064,6 +1077,10 @@ static void send_accdet_status_event(u32 cable_type, u32 status)
 		input_sync(accdet_input_dev);
 		pr_info("%s LineOut %s\n", __func__,
 			status ? "PlugIn" : "PlugOut");
+#ifdef ODM_HQ_EDIT
+		/*Benshan.Cheng@ODM_HQ.BSP.TP.Function, 2019/10/14 add for tp headset mode*/
+		switch_headset_state(status);
+#endif  /* ODM_HQ_EDIT */
 		break;
 	default:
 		pr_info("%s Invalid cableType\n", __func__);

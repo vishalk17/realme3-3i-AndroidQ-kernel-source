@@ -16,6 +16,10 @@
 #include "mclk/mclk.h"
 #include "regulator/regulator.h"
 #include "gpio/gpio.h"
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera.Drv 20190827 for snesor bringup */
+#include "wl2864/wl2864.h"
+#endif
 
 #include "imgsensor_hw.h"
 #include "imgsensor_cfg_table.h"
@@ -23,7 +27,11 @@ enum IMGSENSOR_RETURN (*hw_open[IMGSENSOR_HW_ID_MAX_NUM])
 	(struct IMGSENSOR_HW_DEVICE **) = {
 	imgsensor_hw_mclk_open,
 	imgsensor_hw_regulator_open,
-	imgsensor_hw_gpio_open
+	imgsensor_hw_gpio_open,
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera.Drv 20190827 for snesor bringup */
+	imgsensor_hw_wl2864_open
+#endif
 };
 
 struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
@@ -32,9 +40,10 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 		IMGSENSOR_I2C_DEV_0,
 		{
 			{IMGSENSOR_HW_PIN_MCLK,  IMGSENSOR_HW_ID_MCLK},
-			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_GPIO},
+			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_WL2864},
 			{IMGSENSOR_HW_PIN_DOVDD, IMGSENSOR_HW_ID_REGULATOR},
 			{IMGSENSOR_HW_PIN_DVDD,  IMGSENSOR_HW_ID_GPIO},
+			{IMGSENSOR_HW_PIN_AFVDD, IMGSENSOR_HW_ID_WL2864},
 			{IMGSENSOR_HW_PIN_PDN,   IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_RST,   IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_NONE,  IMGSENSOR_HW_ID_NONE},
@@ -45,11 +54,14 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 		IMGSENSOR_I2C_DEV_1,
 		{
 			{IMGSENSOR_HW_PIN_MCLK,  IMGSENSOR_HW_ID_MCLK},
-			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_GPIO},
+			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_WL2864},
 			{IMGSENSOR_HW_PIN_DOVDD, IMGSENSOR_HW_ID_REGULATOR},
-			{IMGSENSOR_HW_PIN_DVDD,  IMGSENSOR_HW_ID_GPIO},
+			{IMGSENSOR_HW_PIN_DVDD,  IMGSENSOR_HW_ID_WL2864},
 			{IMGSENSOR_HW_PIN_PDN,   IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_RST,   IMGSENSOR_HW_ID_GPIO},
+#ifdef MIPI_SWITCH
+			{IMGSENSOR_HW_PIN_MIPI_SWITCH_SEL, IMGSENSOR_HW_ID_GPIO},
+#endif
 			{IMGSENSOR_HW_PIN_NONE, IMGSENSOR_HW_ID_NONE},
 		},
 	},
@@ -58,22 +70,24 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 		IMGSENSOR_I2C_DEV_1,
 		{
 			{IMGSENSOR_HW_PIN_MCLK,  IMGSENSOR_HW_ID_MCLK},
-			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_GPIO},
+			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_WL2864},
 			{IMGSENSOR_HW_PIN_DOVDD, IMGSENSOR_HW_ID_REGULATOR},
-			{IMGSENSOR_HW_PIN_DVDD,  IMGSENSOR_HW_ID_GPIO},
+			{IMGSENSOR_HW_PIN_DVDD,  IMGSENSOR_HW_ID_WL2864},
 			{IMGSENSOR_HW_PIN_PDN,   IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_RST,   IMGSENSOR_HW_ID_GPIO},
+#ifdef MIPI_SWITCH
+			{IMGSENSOR_HW_PIN_MIPI_SWITCH_SEL, IMGSENSOR_HW_ID_GPIO},
+#endif
 			{IMGSENSOR_HW_PIN_NONE,  IMGSENSOR_HW_ID_NONE},
 		},
 	},
 	{
 		IMGSENSOR_SENSOR_IDX_SUB2,
-		IMGSENSOR_I2C_DEV_1,
+		IMGSENSOR_I2C_DEV_0,
 		{
 			{IMGSENSOR_HW_PIN_MCLK,  IMGSENSOR_HW_ID_MCLK},
-			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_GPIO},
+			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_WL2864},
 			{IMGSENSOR_HW_PIN_DOVDD, IMGSENSOR_HW_ID_REGULATOR},
-			{IMGSENSOR_HW_PIN_DVDD,  IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_PDN,   IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_RST,   IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_NONE,  IMGSENSOR_HW_ID_NONE},
@@ -84,9 +98,8 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 		IMGSENSOR_I2C_DEV_1,
 		{
 			{IMGSENSOR_HW_PIN_MCLK,  IMGSENSOR_HW_ID_MCLK},
-			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_GPIO},
+			{IMGSENSOR_HW_PIN_AVDD,  IMGSENSOR_HW_ID_WL2864},
 			{IMGSENSOR_HW_PIN_DOVDD, IMGSENSOR_HW_ID_REGULATOR},
-			{IMGSENSOR_HW_PIN_DVDD,  IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_PDN,	 IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_RST,	 IMGSENSOR_HW_ID_GPIO},
 			{IMGSENSOR_HW_PIN_NONE,  IMGSENSOR_HW_ID_NONE},
@@ -98,6 +111,36 @@ struct IMGSENSOR_HW_CFG imgsensor_custom_config[] = {
 
 struct IMGSENSOR_HW_POWER_SEQ platform_power_sequence[] = {
 #ifdef MIPI_SWITCH
+
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera.Drv 20190827 for snesor bringup */
+	{
+		PLATFORM_POWER_SEQ_NAME,
+		{
+			{
+				IMGSENSOR_HW_PIN_MIPI_SWITCH_SEL,
+				IMGSENSOR_HW_PIN_STATE_LEVEL_0,
+				0,
+				IMGSENSOR_HW_PIN_STATE_LEVEL_0,
+				0
+			},
+		},
+		IMGSENSOR_SENSOR_IDX_SUB,
+	},
+	{
+		PLATFORM_POWER_SEQ_NAME,
+		{
+			{
+				IMGSENSOR_HW_PIN_MIPI_SWITCH_SEL,
+				IMGSENSOR_HW_PIN_STATE_LEVEL_HIGH,
+				0,
+				IMGSENSOR_HW_PIN_STATE_LEVEL_0,
+				0
+			},
+		},
+		IMGSENSOR_SENSOR_IDX_MAIN2,
+	},
+#else
 	{
 		PLATFORM_POWER_SEQ_NAME,
 		{
@@ -138,6 +181,8 @@ struct IMGSENSOR_HW_POWER_SEQ platform_power_sequence[] = {
 		},
 		IMGSENSOR_SENSOR_IDX_MAIN2,
 	},
+#endif//ODM_HQ_EDIT
+
 #endif
 
 	{NULL}
@@ -145,6 +190,112 @@ struct IMGSENSOR_HW_POWER_SEQ platform_power_sequence[] = {
 
 /* Legacy design */
 struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera.Drv 20190827 for snesor bringup */
+#if defined(S5KGW1_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_S5KGW1_MIPI_RAW,
+		{
+			{SensorMCLK, Vol_High, 0},
+			{RST, Vol_Low, 1},
+			{AVDD, Vol_2800, 0},
+			{DVDD, Vol_1050, 0},
+			{DOVDD, Vol_1800, 0},
+			{AFVDD, Vol_2800, 2},
+			{RST, Vol_High, 5},
+		},
+	},
+#endif
+#if defined(S5KGM1SP_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_S5KGM1SP_MIPI_RAW,
+		{
+			{SensorMCLK, Vol_High, 0},
+			{RST, Vol_Low, 1},
+			{AVDD, Vol_2800, 0},
+			{DVDD, Vol_1050, 0},
+			{DOVDD, Vol_1800, 0},
+			{AFVDD, Vol_2800, 2},
+			{RST, Vol_High, 5},
+		},
+	},
+#endif
+#if defined(S5K3P9SP_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_S5K3P9SP_MIPI_RAW,
+		{
+			{SensorMCLK, Vol_High, 0},
+			{RST, Vol_Low, 1},
+			{AVDD, Vol_2800, 0},
+			{DVDD, Vol_1050, 0},
+			{DOVDD, Vol_1800, 3},
+			{RST, Vol_High, 5},
+		},
+	},
+#endif
+#if defined(OV8856_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_OV8856_MIPI_RAW,
+		{
+			{SensorMCLK, Vol_High, 0},
+			{RST, Vol_Low, 1},
+			{AVDD, Vol_2800, 0},
+			{DVDD, Vol_1200, 0},
+			{DOVDD, Vol_1800, 2},
+			{RST, Vol_High, 5},
+		},
+	},
+#endif
+#if defined(GC2375H_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_GC2375H_MIPI_RAW,
+		{
+			{PDN, Vol_High, 2},
+			{DOVDD, Vol_1800, 1},
+			{AVDD, Vol_2800, 1},
+			{SensorMCLK, Vol_High, 1},
+			{PDN, Vol_Low, 10, Vol_High, 1},
+		},
+	},
+#endif
+#if defined(GC02M0_MIPI_MONO)
+	{
+		SENSOR_DRVNAME_GC02M0_MIPI_MONO,
+		{
+			{PDN, Vol_Low, 1},
+			{DOVDD, Vol_1800, 1},
+			{AVDD, Vol_2800, 1},
+			{SensorMCLK, Vol_High, 2},
+			{PDN, Vol_High, 3},
+		},
+	},
+#endif
+#if defined(OV02A10_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_OV02A10_MIPI_RAW,
+		{
+			{PDN, Vol_High, 2},
+			{DOVDD, Vol_1800, 1},
+			{AVDD, Vol_2800, 5},
+			{SensorMCLK, Vol_High, 1},
+			{PDN, Vol_Low, 10},
+		},
+	},
+#endif
+#if defined(GC02K0_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_GC02K0_MIPI_RAW,
+		{
+			{PDN, Vol_Low, 1},
+			{DOVDD, Vol_1800, 1},
+			{AVDD, Vol_2800, 1},
+			{SensorMCLK, Vol_High, 2},
+			{PDN, Vol_High, 3},
+		},
+	},
+#endif
+
+#else
 #if defined(IMX586_MIPI_RAW)
 	{
 		SENSOR_DRVNAME_IMX586_MIPI_RAW,
@@ -619,21 +770,6 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 		},
 	},
 #endif
-#if defined(OV8856_MIPI_RAW)
-	{SENSOR_DRVNAME_OV8856_MIPI_RAW,
-		{
-			{SensorMCLK, Vol_High, 0},
-			{DOVDD, Vol_1800, 0},
-			{AVDD, Vol_2800, 0},
-			{DVDD, Vol_1200, 0},
-			{AFVDD, Vol_2800, 2},
-			{PDN, Vol_Low, 0},
-			{PDN, Vol_High, 0},
-			{RST, Vol_Low, 0},
-			{RST, Vol_High, 5},
-		},
-	},
-#endif
 #if defined(S5K2X8_MIPI_RAW)
 	{
 		SENSOR_DRVNAME_S5K2X8_MIPI_RAW,
@@ -902,6 +1038,8 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 		},
 	},
 #endif
+
+#endif//ODM_HQ_EDIT
 
 	/* add new sensor before this line */
 	{NULL,},

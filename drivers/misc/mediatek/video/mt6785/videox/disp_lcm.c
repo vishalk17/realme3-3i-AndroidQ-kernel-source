@@ -26,6 +26,16 @@
 #include <linux/of.h>
 #endif
 
+#ifdef ODM_HQ_EDIT
+/* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2018/12/20, add project choose*/
+#include <soc/oppo/oppo_project.h>
+/*
+* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2017/07/25,
+* add for lcd status flag
+*/
+bool flag_lcd_off = false;
+
+#endif /* ODM_HQ_EDIT */
 /* This macro and arrya is designed for multiple LCM support */
 /* for multiple LCM, we should assign I/F Port id in lcm driver, */
 /* such as DPI0, DSI0/1 */
@@ -1022,6 +1032,11 @@ void load_lcm_resources_from_DT(struct LCM_DRIVER *lcm_drv)
 }
 #endif /* MTK_LCM_DEVICE_TREE_SUPPORT */
 
+#ifdef ODM_HQ_EDIT
+/*sunjingtao@ODM.BSP.System  2019/9/7 add for devinfo*/
+char *hq_lcm_name=0;
+#endif
+
 struct disp_lcm_handle *disp_lcm_probe(char *plcm_name,
 	enum LCM_INTERFACE_ID lcm_id, int is_lcm_inited)
 {
@@ -1039,6 +1054,11 @@ struct disp_lcm_handle *disp_lcm_probe(char *plcm_name,
 
 	DISPFUNC();
 	DISPCHECK("plcm_name=%s is_lcm_inited %d\n", plcm_name, is_lcm_inited);
+
+#ifdef ODM_HQ_EDIT
+/*sunjingtao@ODM.BSP.System  2019/9/7 add for devinfo*/
+	hq_lcm_name = plcm_name;
+#endif
 
 #if defined(MTK_LCM_DEVICE_TREE_SUPPORT)
 	if (check_lcm_node_from_DT() == 0) {
@@ -1416,6 +1436,14 @@ int disp_lcm_suspend(struct disp_lcm_handle *plcm)
 		if (lcm_drv->suspend_power)
 			lcm_drv->suspend_power();
 
+		#ifdef ODM_HQ_EDIT
+		/*
+		* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2017/07/25,
+		* add for lcd status flag
+		*/
+		flag_lcd_off = true;
+		#endif /*ODM_HQ_EDIT*/
+
 		return 0;
 	}
 	DISP_PR_ERR("lcm_drv is null\n");
@@ -1439,6 +1467,14 @@ int disp_lcm_resume(struct disp_lcm_handle *plcm)
 			DISP_PR_ERR("FATAL ERROR, lcm_drv->resume is null\n");
 			return -1;
 		}
+
+		#ifdef ODM_HQ_EDIT
+		/*
+		* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2017/07/25,
+		* add for lcd status flag
+		*/
+		flag_lcd_off = false;
+		#endif /*ODM_HQ_EDIT*/
 
 		return 0;
 	}
@@ -1496,9 +1532,64 @@ int disp_lcm_adjust_fps(void *cmdq, struct disp_lcm_handle *plcm, int fps)
 	return -1;
 }
 
+#ifdef ODM_HQ_EDIT
+/* Liyan@ODM.HQ.Multimedia.LCM 2019/09/19 modified for backlight remapping */
+extern unsigned int esd_recovery_backlight_level;
+static int backlight_remapping_into_tddic_reg(struct disp_lcm_handle *plcm, int level_brightness)
+{
+	int level_temp, value_a, value_b;
+	int level;
+	struct LCM_PARAMS *lcm_params = NULL;
+	lcm_params = plcm->params;
+	level = level_brightness;
+	if (level > 0) {
+		pr_debug("%s level %d \n", __func__, level);
+		if (level >= lcm_params->brightness_max) {
+			level = lcm_params->brightness_max;
+		} else if (lcm_params->blmap) {
+			if (level%32 > 0)
+				level_temp = level/32 + 1;
+			else
+				level_temp = level/32;
+
+			level_temp = level_temp - 1;
+			if((level_temp*2 + 1) > lcm_params->blmap_size){
+				DISP_PR_ERR(" %s android brightness level is more than 2047 or LCM blmap_size is setting short than 128 = %d\n", __func__, lcm_params->blmap_size);
+				return 0;
+			}
+			value_a = lcm_params->blmap[level_temp*2];
+			value_b = lcm_params->blmap[level_temp*2 + 1];
+			if (level <= 383)
+				level = value_a*level/100 + value_b;
+			else
+				level = value_a*level/100 - value_b;
+			pr_debug(" %s value_a %d   value_b %d level_temp %d level %d\n", __func__, value_a, value_b, level_temp, level);
+			if (level < 0){
+				DISP_PR_ERR(" %s backlight value had been converted into a minus type = %d\n", __func__, level);
+				return 0;
+			}
+		}
+		if (level < lcm_params->brightness_min)
+			level = lcm_params->brightness_min;
+		if (level > lcm_params->brightness_max)
+			level = lcm_params->brightness_max;
+		return level;
+	} else if (level == 0){
+		return 0;
+	} else {
+		DISP_PR_ERR(" %s android brightness level is error = %d\n", __func__, level);
+		return 0;
+	}
+}
+#endif
+
 int disp_lcm_set_backlight(struct disp_lcm_handle *plcm,
 	void *handle, int level)
 {
+#ifdef ODM_HQ_EDIT
+/* Liyan@ODM.HQ.Multimedia.LCM 2019/09/19 modified for backlight remapping */
+	int level_remap;
+#endif
 	struct LCM_DRIVER *lcm_drv = NULL;
 
 	DISPFUNC();
@@ -1514,7 +1605,15 @@ int disp_lcm_set_backlight(struct disp_lcm_handle *plcm,
 
 	lcm_drv = plcm->drv;
 	if (lcm_drv->set_backlight_cmdq) {
+#ifdef ODM_HQ_EDIT
+/* Liyan@ODM.HQ.Multimedia.LCM 2019/09/19 modified for backlight remapping */
+		esd_recovery_backlight_level = level; /* restore backlight level for esd recovery */
+		level_remap = backlight_remapping_into_tddic_reg(plcm, level);
+		DISPCHECK("%s: level_remap, level = %d, %d\n", __func__, level_remap, level);
+		lcm_drv->set_backlight_cmdq(handle, level_remap);
+#else
 		lcm_drv->set_backlight_cmdq(handle, level);
+#endif
 	} else {
 		DISP_PR_ERR("FATAL ERROR, lcm_drv->set_backlight is null\n");
 		return -1;
@@ -1657,6 +1756,45 @@ int disp_lcm_set_lcm_cmd(struct disp_lcm_handle *plcm, void *cmdq_handle,
 	return -1;
 }
 
+#ifdef ODM_HQ_EDIT
+/* Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Machine, 2018/09/10, Add for Porting cabc interface */
+int disp_lcm_oppo_set_lcm_cabc_cmd(struct disp_lcm_handle *plcm, void *handle, unsigned int level)
+{
+	struct LCM_DRIVER *lcm_drv = NULL;
+
+	DISPFUNC();
+	if (_is_lcm_inited(plcm)) {
+		lcm_drv = plcm->drv;
+		if (lcm_drv->set_cabc_mode_cmdq) {
+			lcm_drv->set_cabc_mode_cmdq(handle, level);
+		} else {
+			DISP_PR_ERR("FATAL ERROR, lcm_drv->oppo_set_cabc_mode_cmdq is null\n");
+			return -1;
+		}
+
+		return 0;
+	}
+
+	DISP_PR_ERR("lcm_drv is null\n");
+	return -1;
+}
+
+int disp_lcm_get_hbm_state(struct disp_lcm_handle *plcm)
+{
+	if (!_is_lcm_inited(plcm)) {
+		DISP_PR_ERR("lcm_drv is null\n");
+		return -1;
+	}
+
+	if (!plcm->drv->get_hbm_state) {
+		DISP_PR_ERR("FATAL ERROR, lcm_drv->get_hbm_state is null\n");
+		return -1;
+	}
+
+	return plcm->drv->get_hbm_state();
+}
+
+#endif /* ODM_HQ_EDIT */
 int disp_lcm_is_partial_support(struct disp_lcm_handle *plcm)
 {
 	struct LCM_DRIVER *lcm_drv = NULL;
@@ -1724,5 +1862,173 @@ int disp_lcm_is_arr_support(struct disp_lcm_handle *plcm)
 	DISPDBG("%s,lcm support arr\n", __func__);
 	return 1;
 }
+#ifdef CONFIG_MTK_HIGH_FRAME_RATE
+/*-------------------DynFPS start-----------------------------*/
+int disp_lcm_is_dynfps_support(struct disp_lcm_handle *plcm)
+{
+	struct LCM_PARAMS *lcm_param = NULL;
+	unsigned int dfps_enable = 0;
+	unsigned int dfps_num = 0;
+
+	/*DISPFUNC();*/
+	if (_is_lcm_inited(plcm))
+		lcm_param = plcm->params;
+	else
+		return 0;
+
+	if (lcm_param->type != LCM_TYPE_DSI ||
+		lcm_param->dsi.mode == CMD_MODE) {
+		return 0;
+	}
+
+	dfps_enable = lcm_param->dsi.dfps_enable;
+	dfps_num = lcm_param->dsi.dfps_num;
+	if (dfps_enable == 0 ||
+		dfps_num < 2) {
+		return 0;
+	}
+	/*DynFPS:ToDo*/
+	DISPDBG("%s,lcm support arr\n", __func__);
+	return 1;
+}
+
+unsigned int disp_lcm_dynfps_get_def_fps(
+		struct disp_lcm_handle *plcm)
+{
+	struct LCM_PARAMS *lcm_param = NULL;
+
+	/*DISPFUNC();*/
+	if (_is_lcm_inited(plcm))
+		lcm_param = plcm->params;
+	else
+		return 0;
+
+	return lcm_param->dsi.dfps_default_fps;
+}
+unsigned int disp_lcm_dynfps_get_dfps_num(
+		struct disp_lcm_handle *plcm)
+{
+	struct LCM_PARAMS *lcm_param = NULL;
+
+	/*DISPFUNC();*/
+	if (_is_lcm_inited(plcm))
+		lcm_param = plcm->params;
+	else
+		return 0;
+
+	return lcm_param->dsi.dfps_num;
+}
+unsigned int disp_lcm_dynfps_get_def_timing_fps(
+	struct disp_lcm_handle *plcm)
+{
+	struct LCM_PARAMS *lcm_param = NULL;
+
+	/*DISPFUNC();*/
+	if (_is_lcm_inited(plcm))
+		lcm_param = plcm->params;
+	else
+		return 0;
+
+	return lcm_param->dsi.dfps_def_vact_tim_fps;
+}
+bool disp_lcm_need_send_cmd(
+	struct disp_lcm_handle *plcm,
+	unsigned int last_dynfps, unsigned int new_dynfps)
+{
+	struct LCM_DRIVER *lcm_drv = NULL;
+	struct LCM_PARAMS *lcm_param = NULL;
+	struct LCM_DSI_PARAMS *dsi_params = NULL;
+	int from_level = -1;
+	int to_level = -1;
+	struct dfps_info *dfps_params = NULL;
+	unsigned int j = 0;
+
+	DISPFUNC();
+	if (_is_lcm_inited(plcm)) {
+		lcm_drv = plcm->drv;
+		lcm_param = plcm->params;
+		if (lcm_param)
+			dsi_params = &(lcm_param->dsi);
+	} else {
+		DISPCHECK("%s, lcm not inited!\n", __func__);
+		return false;
+	}
+
+	if (!lcm_drv ||
+		!lcm_drv->dfps_send_lcm_cmd ||
+		!lcm_drv->dfps_need_send_cmd) {
+		DISPCHECK("%s, no lcm drv or no dfps func !!!\n", __func__);
+		return false;
+	}
+
+	if (!dsi_params ||
+		!dsi_params->dfps_enable) {
+		DISPCHECK("%s,not support dfps !!!\n", __func__);
+		return false;
+	}
+	dfps_params = dsi_params->dfps_params;
+
+	for (j = 0; j < dsi_params->dfps_num; j++) {
+		if ((dfps_params[j]).fps == last_dynfps)
+			from_level = (dfps_params[j]).level;
+		if ((dfps_params[j]).fps == new_dynfps)
+			to_level = (dfps_params[j]).level;
+	}
+	if (from_level < 0 ||
+		to_level < 0)
+		return false;
+
+	return	lcm_drv->dfps_need_send_cmd(from_level, to_level);
+}
+
+void disp_lcm_dynfps_send_cmd(
+	struct disp_lcm_handle *plcm, void *cmdq_handle,
+	unsigned int from_fps, unsigned int to_fps)
+
+{
+	struct LCM_DRIVER *lcm_drv = NULL;
+	struct LCM_PARAMS *lcm_param = NULL;
+	struct LCM_DSI_PARAMS *dsi_params = NULL;
+	unsigned int from_level = 0;
+	unsigned int to_level = 0;
+	struct dfps_info *dfps_params = NULL;
+	unsigned int j = 0;
+
+	/*DISPFUNC();*/
+	if (_is_lcm_inited(plcm)) {
+		lcm_drv = plcm->drv;
+		lcm_param = plcm->params;
+		if (lcm_param)
+			dsi_params = &(lcm_param->dsi);
+	}
+
+	if (!lcm_drv || !lcm_drv->dfps_send_lcm_cmd) {
+		DISPCHECK("%s, no lcm drv or no dfps func !!!\n", __func__);
+		goto done;
+	}
+
+	if (!dsi_params ||
+		!dsi_params->dfps_enable) {
+		DISPCHECK("%s,not support dfps !!!\n", __func__);
+		goto done;
+	}
+
+	dfps_params = dsi_params->dfps_params;
+
+	for (j = 0; j < dsi_params->dfps_num; j++) {
+		if ((dfps_params[j]).fps == from_fps)
+			from_level = (dfps_params[j]).level;
+		if ((dfps_params[j]).fps == to_fps)
+			to_level = (dfps_params[j]).level;
+	}
+
+	lcm_drv->dfps_send_lcm_cmd(cmdq_handle,
+		from_level, to_level);
+done:
+	DISPCHECK("%s,add done\n", __func__);
+}
+
+/*-------------------DynFPS end-----------------------------*/
+#endif
 
 

@@ -62,6 +62,35 @@ static ssize_t flashlight_show_mode(struct device *dev,
 		       flashlight_mode_string[flashlight_dev->props.mode]);
 }
 
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera 20190816 for Flashlight Bringup */
+static ssize_t flashlight_store_mode(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	int rc;
+	struct flashlight_device *flashlight_dev = to_flashlight_device(dev);
+	long mode;
+
+	rc = kstrtol(buf, 0, &mode);
+	if ((flashlight_dev->ops ==  NULL) ||
+	    (flashlight_dev->ops->set_mode == NULL)) {
+		rc = -EINVAL;
+		return rc;
+	}
+
+	mutex_lock(&flashlight_dev->ops_lock);
+	flashlight_dev->props.mode = mode;
+	rc = flashlight_dev->ops->set_mode(flashlight_dev,
+					   mode);
+	mutex_unlock(&flashlight_dev->ops_lock);
+
+	if (rc < 0)
+		return rc;
+
+	return count;
+}
+#endif
+
 static ssize_t flashlight_show_torch_max_brightness(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -205,7 +234,73 @@ static ssize_t flashlight_show_strobe_brightness(struct device *dev,
 		       flashlight_dev->props.strobe_brightness);
 }
 
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera 20190816 for Flashlight Bringup */
+static ssize_t flashlight_show_ata_control(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct flashlight_device *flashlight_dev = to_flashlight_device(dev);
 
+	return scnprintf(buf, PAGE_SIZE, "%d,%s\n",
+			flashlight_dev->props.torch_brightness,
+			flashlight_mode_string[flashlight_dev->props.mode]);
+}
+
+static ssize_t flashlight_store_ata_control(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	long mode;
+	long brightness;
+	int rc = -1;
+
+	struct flashlight_device *flashlight_dev = to_flashlight_device(dev);
+
+	rc = kstrtol(buf, 0, &brightness);
+	if (rc)
+		return rc;
+
+	if (brightness > 0)
+		brightness = 1;
+	else
+		brightness = 0;
+
+	rc = -ENXIO;
+	mutex_lock(&flashlight_dev->ops_lock);
+	if (flashlight_dev->ops &&
+	    flashlight_dev->ops->set_torch_brightness) {
+		if (brightness > flashlight_dev->props.torch_max_brightness)
+			rc = -EINVAL;
+		else {
+			pr_debug("flashlight: set torch brightness to %ld\n",
+				 brightness);
+			flashlight_dev->props.torch_brightness = brightness;
+			flashlight_dev->ops->set_torch_brightness(
+				flashlight_dev, brightness);
+		}
+	}
+	mutex_unlock(&flashlight_dev->ops_lock);
+
+	if ((flashlight_dev->ops ==  NULL) ||
+	    (flashlight_dev->ops->set_mode == NULL)) {
+		return -EINVAL;
+	}
+
+	if (brightness > 0)
+		mode = 1;
+	else
+		mode = 0;
+
+	mutex_lock(&flashlight_dev->ops_lock);
+	flashlight_dev->props.mode = mode;
+	rc = flashlight_dev->ops->set_mode(flashlight_dev,
+					   mode);
+	mutex_unlock(&flashlight_dev->ops_lock);
+	if (rc < 0)
+		return rc;
+
+	return count;
+}
+#endif
 
 static struct class *flashlight_class;
 
@@ -237,7 +332,12 @@ static void flashlight_device_release(struct device *dev)
 
 static DEVICE_ATTR(name, 0444, flashlight_show_name, NULL);
 static DEVICE_ATTR(type, 0444, flashlight_show_type, NULL);
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera 20190816 for Flashlight Bringup */
+static DEVICE_ATTR(mode, 0664, flashlight_show_mode, flashlight_store_mode);
+#else
 static DEVICE_ATTR(mode, 0444, flashlight_show_mode, NULL);
+#endif
 static DEVICE_ATTR(torch_max_brightness, 0444,
 	flashlight_show_torch_max_brightness, NULL);
 static DEVICE_ATTR(strobe_max_brightness, 0444,
@@ -255,6 +355,12 @@ static DEVICE_ATTR(torch_brightness, 0664,
 static DEVICE_ATTR(strobe_brightness, 0664,
 	flashlight_show_strobe_brightness,
 	flashlight_store_strobe_brightness);
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera 20190816 for Flashlight Bringup */
+static DEVICE_ATTR(ata_control, 0664,
+	flashlight_show_ata_control,
+	flashlight_store_ata_control);//add for ATA control flashlight by Murphy Zhou 2018-10-17
+#endif
 
 static struct attribute *flashlight_class_attrs[] = {
 	&dev_attr_name.attr,
@@ -267,6 +373,10 @@ static struct attribute *flashlight_class_attrs[] = {
 	&dev_attr_strobe_timeout.attr,
 	&dev_attr_torch_brightness.attr,
 	&dev_attr_strobe_brightness.attr,
+        #ifdef ODM_HQ_EDIT
+        /* Lijian@ODM.Camera 20190816 for Flashlight Bringup  */
+	&dev_attr_ata_control.attr,
+        #endif
 	NULL,
 };
 

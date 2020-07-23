@@ -1165,7 +1165,6 @@ static long vpu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 					"CLOSE_DEV_NOTICE", ret);
 			goto out;
 		}
-
 		mutex_lock(&debug_list_mutex);
 		list_for_each(head, &device_debug_list)
 		{

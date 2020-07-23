@@ -21,6 +21,12 @@
 #include <hal_kpd.h>
 #include <mt-plat/mtk_boot_common.h>
 
+#ifdef ODM_HQ_EDIT
+/*zhangchao@ODM.HQ.Charger 2020/03/09 modified for HW reset sarter*/
+#include <soc/oppo/oppo_project.h>
+extern int g_cphy_dphy_gpio_value;
+#endif /* ODM_HQ_EDIT */
+
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH
 static int kpd_enable_lprst = 1;
 #endif
@@ -54,11 +60,16 @@ void kpd_get_keymap_state(u16 state[])
 void long_press_reboot_function_setting(void)
 {
 #ifdef CONFIG_MTK_PMIC_NEW_ARCH /*for pmic not ready*/
+#ifdef ODM_HQ_EDIT
+/*zhangchao@ODM.HQ.Charger 2020/03/09 modified for MTK HW reset sarter*/
+pr_err("get_project = %d ,get_Operator_Version = %d, g_cphy_dphy_gpio_value = %d\n",get_project(),get_Operator_Version(),g_cphy_dphy_gpio_value);
+if((get_project() == 19661) && ((get_Operator_Version() == 111) || (get_Operator_Version() == 112) || (get_Operator_Version() == 113) || (get_Operator_Version() == 114) || (g_cphy_dphy_gpio_value == 1))) {
+#endif
 	if (kpd_enable_lprst && get_boot_mode() == NORMAL_BOOT) {
 		kpd_info("Normal Boot long press reboot selection\n");
 
 #ifdef CONFIG_KPD_PMIC_LPRST_TD
-		kpd_info("Enable normal mode LPRST\n");
+	kpd_info("Enable normal mode LPRST\n");
 #ifdef CONFIG_ONEKEY_REBOOT_NORMAL_MODE
 		/*POWERKEY*/
 		pmic_set_register_value(PMIC_RG_PWRKEY_KEY_MODE, 0x00);
@@ -95,6 +106,10 @@ void long_press_reboot_function_setting(void)
 #endif
 
 	}
+#ifdef ODM_HQ_EDIT
+/*zhangchao@ODM.HQ.Charger 2020/03/09 modified for HW reset sarter*/
+}
+#endif
 #endif
 }
 
@@ -107,6 +122,8 @@ bool __attribute__ ((weak)) mtk_audio_condition_enter_suspend(void)
 /********************************************************************/
 void kpd_wakeup_src_setting(int enable)
 {
+#ifndef ODM_HQ_EDIT
+/* sunjingtao@EXP.BSP.bootloader.bootflow, 2019/10/26, Remove for keypad volume up and volume down */
 	int is_fm_radio_playing = 0;
 
 	/* If FM is playing, keep keypad as wakeup source */
@@ -124,6 +141,15 @@ void kpd_wakeup_src_setting(int enable)
 			enable_kpd(0);
 		}
 	}
+#else
+	if (enable == 1) {
+		kpd_print("enable kpd work!\n");
+		enable_kpd(1);
+	} else {
+		kpd_print("disable kpd work!\n");
+		enable_kpd(0);
+	}
+#endif	/* ODM_HQ_EDIT */
 }
 
 /********************************************************************/

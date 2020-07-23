@@ -32,6 +32,13 @@
 #include "disp_drv_platform.h"
 #include "primary_display.h"
 #include "mt-plat/mtk_chip.h"
+#ifdef ODM_HQ_EDIT
+/*
+* Yongpeng.Yi@PSW.MM.Display.LCD.Feature, 2018/09/26,
+* add for aod feature
+*/
+#include <soc/oppo/oppo_project.h>
+#endif /*ODM_HQ_EDIT*/
 
 /* use this magic_code to detect memory corruption */
 #define MAGIC_CODE 0xDEADAAA0U
@@ -155,6 +162,11 @@ static struct {
 	{DISP_OPT_OVL_SBCH, 0, "DISP_OPT_OVL_SBCH"},
 	{DISP_OPT_MMPATH, 0, "DISP_OPT_MMPATH"},
 	{DISP_OPT_TUI_MODE, 0, "DISP_OPT_TUI_MODE"},
+	/*DynFPS*/
+	{DISP_OPT_DYNAMIC_FPS, 0, "DISP_OPT_DYNAMIC_FPS"},
+#ifdef ODM_HQ_EDIT
+	{DISP_OPT_LCM_HBM, 0, "DISP_OPT_LCM_HBM"},
+#endif
 };
 
 const char *disp_helper_option_spy(enum DISP_HELPER_OPT option)
@@ -441,6 +453,20 @@ void disp_helper_option_init(void)
 	disp_helper_set_option(DISP_OPT_OVL_SBCH, 1);
 	disp_helper_set_option(DISP_OPT_MMPATH, 0);
 	disp_helper_set_option(DISP_OPT_TUI_MODE, 0);
+	/*DynFPS*/
+	disp_helper_set_option(DISP_OPT_DYNAMIC_FPS, 1);
+#ifdef ODM_HQ_EDIT
+	/*
+	* Ling.Guo@PSW.MM.Display.LCD.Stability, 2019/01/21,
+	* add for dimming layer HBM mode
+	*/
+	if (is_project(OPPO_19531) || is_project(OPPO_19391)) {
+		disp_helper_set_option(DISP_OPT_LCM_HBM, 1);
+	} else {
+		disp_helper_set_option(DISP_OPT_LCM_HBM, 0);
+	}
+#endif /*ODM_HQ_EDIT*/
+
 }
 
 int disp_helper_get_option_list(char *stringbuf, int buf_len)

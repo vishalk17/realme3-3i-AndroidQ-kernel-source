@@ -1255,4 +1255,20 @@ config TOUCHSCREEN_MTK_TOUCH
 
          To compile this dirver for used touch IC.
 
+#ifdef ODM_HQ_EDIT
+#Benshan.Cheng@ODM_HQ.MM.Tp, 2019/10/21, add tp driver
+config TOUCHPANEL_OPPO
+        bool "touchscreen for OPPO"
+        default n
+        help
+          Say Y here if you support hq touch panel.
+
+          If unsure, say N.
+
+          To compile this dirver as a module, choose M here: the
+          module will be called.
+
+source "drivers/input/touchscreen/oppo_touchscreen/Kconfig"
+#endif
+
 endif

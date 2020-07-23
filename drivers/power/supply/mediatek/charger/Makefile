@@ -12,7 +12,7 @@
 #
 
 MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
-subdir-ccflags-y += -Werror
+subdir-ccflags-y += -Werror -Wunused-function -Wunused-variable
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
@@ -25,16 +25,23 @@ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/typec/tcpc/inc
 subdir-ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/misc/
 subdir-ccflags-y += -I$(srctree)/drivers/power/supply/mediatek/battery/
 
-obj-y += charger_class.o mtk_charger.o mtk_switch_charging.o mtk_pdc_intf.o\
+#ifdef ODM_HQ_EDIT /* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
+ifeq ($(CONFIG_OPPO_HQ_CHARGER),y)
+obj-y += charger_class.o mtk_switch_charging.o mtk_pdc_intf.o\
 	 mtk_chg_type_det.o mtk_pe40_intf.o mtk_linear_charging.o\
 	 adapter_class.o mtk_pd_adapter.o
+else
+obj-y += charger_class.o oppo_mtk_charger.o mtk_switch_charging.o mtk_pdc_intf.o\
+	 mtk_chg_type_det.o mtk_pe40_intf.o mtk_linear_charging.o\
+	 adapter_class.o mtk_pd_adapter.o oppo_mt6771_charger.o
+endif
+#endif
 
 obj-$(CONFIG_MTK_DUAL_CHARGER_SUPPORT) += mtk_dual_switch_charging.o
 obj-$(CONFIG_MTK_PUMP_EXPRESS_PLUS_SUPPORT) += mtk_pe_intf.o
 obj-$(CONFIG_MTK_PUMP_EXPRESS_PLUS_20_SUPPORT) += mtk_pe20_intf.o
 obj-$(CONFIG_CHARGER_RT9465) += rt9465.o
 obj-$(CONFIG_CHARGER_RT9458) += rt9458.o
-obj-$(CONFIG_CHARGER_RT9467) += rt9467.o
-obj-$(CONFIG_CHARGER_RT9471) += rt9471.o
 obj-$(CONFIG_CHARGER_HL7005) += hl7005.o
 obj-$(CONFIG_CHARGER_BQ25601) += bq25601.o
+obj-$(CONFIG_MTK_HVDCP) += mtk_hvdcp_intf.o

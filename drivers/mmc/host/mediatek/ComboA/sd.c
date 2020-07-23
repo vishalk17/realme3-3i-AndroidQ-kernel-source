@@ -70,6 +70,11 @@
 
 #include "dbg.h"
 
+#ifdef VENDOR_EDIT
+//yh@BSP.Storage.Emmc, 2017/10/30 add for work around hynix emmc WP issue
+#include <linux/reboot.h>
+#endif
+
 #define CAPACITY_2G             (2 * 1024 * 1024 * 1024ULL)
 
 /* FIX ME: Check if its reference in mtk_sd_misc.h can be removed */
@@ -1765,6 +1770,14 @@ skip_cmd_resp_polling:
 "[%s]: msdc%d XXX CMD<%d> resp<0x%.8x>, write protection violation\n",
 							__func__, host->id,
 							cmd->opcode, *rsp);
+#ifdef VENDOR_EDIT
+//yh@BSP.Storage.Emmc, 2017/10/30 add for work around hynix emmc WP issue
+					if((host->hw->host_function == MSDC_EMMC) &&
+					   ( get_boot_mode() == RECOVERY_BOOT || get_boot_mode() == OPPO_SAU_BOOT ))
+					{
+						emergency_restart();
+					}
+#endif
 				}
 
 				if ((*rsp & R1_OUT_OF_RANGE)

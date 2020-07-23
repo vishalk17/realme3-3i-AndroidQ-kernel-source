@@ -18,6 +18,13 @@
 
 #define PD_VBUS_IR_DROP_THRESHOLD 1200
 
+#ifdef ODM_HQ_EDIT
+/* wangtao@BSP.CHG.Basic, 2019/11/28, sjc Add for PD */
+#include <tcpm.h>
+#ifdef CONFIG_OPPO_CHARGER_MTK6779
+extern int pd_notify;
+#endif
+#endif
 void mtk_pdc_plugout(struct charger_manager *info)
 {
 	info->pdc.check_impedance = true;
@@ -132,7 +139,20 @@ static bool mtk_is_pdc_ready(struct charger_manager *info)
 
 	return false;
 }
-
+#if defined(ODM_HQ_EDIT) && defined(CONFIG_OPPO_CHARGER_MTK6779)
+/*wangtao@ODM.HQ.BSP.CHG 2019/11/29 add for pd charging*/
+bool mtk_pdc_check_charger(struct charger_manager *info)
+{
+	info->pd_type = pd_notify;
+	printk(KERN_ERR "%s: pd_type[%d],pd_notify=%d\n", __func__, info->pd_type,pd_notify);
+	if (pd_notify == PD_CONNECT_PE_READY_SNK_APDO &&
+		info->enable_pe_4 == false)
+		return true;
+	else if (mtk_is_pdc_ready(info) == false)
+		return false;
+	return true;
+}
+#else
 bool mtk_pdc_check_charger(struct charger_manager *info)
 {
 	if (mtk_is_pdc_ready(info) == false)
@@ -140,7 +160,7 @@ bool mtk_pdc_check_charger(struct charger_manager *info)
 
 	return true;
 }
-
+#endif
 void mtk_pdc_plugout_reset(struct charger_manager *info)
 {
 	info->pdc.cap.nr = 0;
@@ -361,7 +381,133 @@ int mtk_pdc_setup(struct charger_manager *info, int idx)
 
 	return ret;
 }
+#ifdef CONFIG_OPPO_HQ_EULER_CHARGER
+//Junbo.Guo@ODM_WT.BSP.CHG, 2019/12/9, Modify for PD
+int oppo_pdc_setup(struct charger_manager *info,int vbus)
+{
+	struct adapter_power_cap *cap;
+	struct mtk_pdc *pd = &info->pdc;
+	int idx = 0;
+	int ret = 0;
+	bool is_support_vbus = false;
 
+	if (!mtk_is_pdc_ready(info)){
+		chr_err("mtk_is_pdc_ready is fail\n");
+		return -1;
+	}
+	
+	adapter_dev_get_cap(info->pd_adapter, MTK_PD, &pd->cap);
+	cap = &pd->cap;
+	if (cap->nr == 0)
+		return -1;
+
+	for (idx = 0; idx < cap->nr; idx++) {
+		if(cap->max_mv[idx] == cap->min_mv[idx]){
+			if(cap->max_mv[idx] == vbus){
+				is_support_vbus = true;
+				break;
+			}
+		}
+	}
+
+	if(is_support_vbus){
+	  ret = adapter_dev_set_cap(info->pd_adapter, MTK_PD,
+			pd->cap.max_mv[idx], pd->cap.ma[idx]);
+	  	chr_err("[%s]max_mv:%d ma:%d \n",
+		__func__,pd->cap.max_mv[idx],pd->cap.ma[idx]);
+	}else{
+		chr_err("[%s] set %d no support\n",__func__,vbus);
+		return -1;
+	}
+
+	return 0;
+	
+}
+
+#else
+
+#ifdef ODM_HQ_EDIT
+/* wangtao@BSP.CHG.Basic, 2019/11/28, sjc Add for PD */
+
+#define VBUS_5V	5000
+#define IBUS_2A	2000
+//#define IBUS_3A	3000
+int oppo_pdc_setup(int *vbus_mv, int *ibus_ma)
+{
+	int ret = 0;
+	struct tcpc_device *tcpc = NULL;
+	printk("wangtao oppo_pdc_setup\n");
+	tcpc = tcpc_dev_get_by_name("type_c_port0");
+	if (tcpc == NULL) {
+		printk(KERN_ERR "%s:get type_c_port0 fail\n", __func__);
+		return -EINVAL;
+	}
+
+	ret = tcpm_inquire_pd_contract(tcpc, vbus_mv, ibus_ma);
+	if (ret != TCPM_SUCCESS) {
+		printk(KERN_ERR "%s: inquire current vbus_mv and ibus_ma fail\n", __func__);
+		return -EINVAL;
+	}
+	printk(KERN_ERR "%s: default vbus_mv[%d], ibus_ma[%d]\n", __func__, *vbus_mv, *ibus_ma);
+
+	if (*vbus_mv != VBUS_5V || *ibus_ma < IBUS_2A) {
+		ret = tcpm_dpm_pd_request(tcpc, VBUS_5V, IBUS_2A, NULL);
+		if (ret != TCPM_SUCCESS) {
+			printk(KERN_ERR "%s: tcpm_dpm_pd_request fail\n", __func__);
+			return -EINVAL;
+		}
+
+		ret = tcpm_inquire_pd_contract(tcpc, vbus_mv, ibus_ma);
+		if (ret != TCPM_SUCCESS) {
+			printk(KERN_ERR "%s: inquire current vbus_mv and ibus_ma fail\n", __func__);
+			return -EINVAL;
+		}
+		printk(KERN_ERR "%s: request 5V/2A vbus_mv[%d], ibus_ma[%d]\n", __func__, *vbus_mv, *ibus_ma);
+	}
+
+	if (*ibus_ma == IBUS_2A) {
+		return 0;
+	} else if (*ibus_ma < IBUS_2A) {
+		printk(KERN_ERR "%s: ibus_ma[%d] < IBUS_2A\n", __func__, *ibus_ma);
+		return -EINVAL;
+	} else {
+		ret = tcpm_dpm_pd_request(tcpc, VBUS_5V, IBUS_2A, NULL);
+		if (ret != TCPM_SUCCESS) {
+			printk(KERN_ERR "%s: tcpm_dpm_pd_request fail\n", __func__);
+			return -EINVAL;
+		} else {
+			ret = tcpm_inquire_pd_contract(tcpc, vbus_mv, ibus_ma);
+			if (ret != TCPM_SUCCESS) {
+				printk(KERN_ERR "%s: inquire current vbus_mv and ibus_ma fail\n", __func__);
+				return -EINVAL;
+			}
+			printk(KERN_ERR "%s: request 5V/2A again vbus_mv[%d], ibus_ma[%d]\n", __func__, *vbus_mv, *ibus_ma);
+		}
+		return 0;
+	}
+}
+
+int oppo_pdc_get(int *vbus_mv, int *ibus_ma)
+{
+	int ret = 0;
+	struct tcpc_device *tcpc = NULL;
+
+	tcpc = tcpc_dev_get_by_name("type_c_port0");
+	if (tcpc == NULL) {
+		printk(KERN_ERR "%s:get type_c_port0 fail\n", __func__);
+		return -EINVAL;
+	}
+
+	ret = tcpm_inquire_pd_contract(tcpc, vbus_mv, ibus_ma);
+	if (ret != TCPM_SUCCESS) {
+		printk(KERN_ERR "%s: inquire current vbus_mv and ibus_ma fail\n", __func__);
+		return -EINVAL;
+	}
+	printk(KERN_ERR "%s: default vbus_mv[%d], ibus_ma[%d]\n", __func__, *vbus_mv, *ibus_ma);
+	return 0;
+}
+#endif /* VENDOR_EDIT */
+#endif
 void mtk_pdc_get_cap_max_watt(struct charger_manager *info)
 {
 	struct mtk_pdc *pd = &info->pdc;

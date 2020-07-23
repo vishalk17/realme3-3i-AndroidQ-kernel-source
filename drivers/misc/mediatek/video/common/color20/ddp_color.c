@@ -1144,7 +1144,7 @@ static unsigned long g_tdshp1_va;
 #define TDSHP_PA_BASE	0x14009000
 #elif defined(CONFIG_MACH_MT6759) || defined(CONFIG_MACH_MT6763) || \
 	defined(CONFIG_MACH_MT6758) || defined(CONFIG_MACH_MT6771) || \
-	defined(CONFIG_MACH_MT3967)
+	defined(CONFIG_MACH_MT3967) || defined(CONFIG_MACH_MT6785)
 #define TDSHP_PA_BASE	0x14007000
 
 #elif defined(CONFIG_MACH_MT6765) || defined(CONFIG_MACH_MT6761) || \
@@ -2370,8 +2370,11 @@ static unsigned long color_get_MDP_HDR_VA(void)
 {
 	unsigned long VA;
 	struct device_node *node = NULL;
-
+#if defined(CONFIG_MACH_MT6785)
+	node = of_find_compatible_node(NULL, NULL, "mediatek,mdp_hdr0");
+#else
 	node = of_find_compatible_node(NULL, NULL, "mediatek,mdp_hdr");
+#endif
 	VA = (unsigned long)of_iomap(node, 0);
 	COLOR_DBG("MDP_HDR VA: 0x%lx\n", VA);
 

@@ -23,6 +23,12 @@ obj-$(CONFIG_MTK_VOW_BARGE_IN_SUPPORT) += scp_vow/
 obj-$(CONFIG_MTK_AUDIODSP_SUPPORT) += audio_dsp/
 obj-$(CONFIG_SND_SOC_MTK_AUDIO_DSP) += audio_dsp/
 
+#ifdef ODM_HQ_EDIT
+#fanxiongnan@ODM.HQ.Multimedia.Audio 2019/11/06 added for SIA8109 speaker pa
+# si driver
+obj-$(CONFIG_SND_SOC_SIA8109) += sia81xx/
+#endif /* ODM_HQ_EDIT */
+
 # btcvsd
 obj-$(CONFIG_SND_SOC_MTK_BTCVSD) += common/
 obj-$(CONFIG_MTK_AUDIO_TUNNELING_SUPPORT) += common_int/
@@ -97,3 +103,8 @@ obj-y += $(AUDIO_PLATFORM)/
 # AP include path
 subdir-ccflags-y += -Werror -I$(src)/$(AUDIO_PLATFORM)
 endif
+
+#ifdef ODM_HQ_EDIT
+#fanxiongnan@ODM.HQ.Multimedia.Audio 2019/10/09 added for aw87339 bringup
+obj-$(CONFIG_SND_SOC_AW87339) += aw87339_audio.o
+#endif /* ODM_HQ_EDIT */

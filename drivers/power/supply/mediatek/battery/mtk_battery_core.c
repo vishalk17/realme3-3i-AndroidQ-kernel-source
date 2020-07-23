@@ -81,7 +81,9 @@
 #include "simulator_kernel.h"
 #endif
 
-
+#ifdef VENDOR_EDIT
+extern bool is_vooc_project(void);
+#endif /*VENDOR_EDIT*/
 
 /* ============================================================ */
 /* global variable */
@@ -232,11 +234,23 @@ int gauge_set_nag_en(int nafg_zcv_en)
 	if (is_fg_disabled())
 		return 0;
 
+#ifdef VENDOR_EDIT
+
+
+/* Qiao.Hu@EXP.BSP.BaseDrv.CHG.Basic, 2017/08/15, Add for charger full status */
+	if (!is_vooc_project()) {
+		if (gm.disable_nafg_int == false) {
+			gauge_dev_enable_nag_interrupt(gm.gdev, nafg_zcv_en);
+		}
+	}
+#else
 #if defined(CONFIG_MTK_DISABLE_GAUGE)
 #else
 	if (gm.disable_nafg_int == false)
 		gauge_dev_enable_nag_interrupt(gm.gdev, nafg_zcv_en);
 #endif
+#endif /* VENDOR_EDIT */
+
 	bm_debug(
 		"%s = %d\n",
 		__func__,
@@ -443,8 +457,10 @@ void fgauge_get_profile_id(void)
 void fg_custom_init_from_header(void)
 {
 	int i, j;
-
+#ifndef VENDOR_EDIT
+/* Qiao.Hu@EXP.BSP.CHG.basic, 2017/07/20, Modify for charger */
 	fgauge_get_profile_id();
+#endif /* VENDOR_EDIT */
 
 	fg_cust_data.versionID1 = FG_DAEMON_CMD_FROM_USER_NUMBER;
 	fg_cust_data.versionID2 = sizeof(fg_cust_data);
@@ -920,7 +936,10 @@ void fg_custom_init_from_dts(struct platform_device *dev)
 	int bat_id, multi_battery, active_table, i, j, ret, column;
 	char node_name[128];
 
+#ifndef VENDOR_EDIT
+/* Qiao.Hu@EXP.BSP.CHG.basic, 2017/07/20, Modify for charger */
 	fgauge_get_profile_id();
+#endif /* VENDOR_EDIT */
 	bat_id = gm.battery_id;
 
 	bm_err("%s\n", __func__);
@@ -1388,6 +1407,51 @@ void fg_custom_init_from_dts(struct platform_device *dev)
 			&(fg_table_cust_data.fg_profile[4].temperature), 1);
 	}
 
+#if 0        
+#ifdef VENDOR_EDIT
+        /* Qiao.Hu@EXP.BSP.BaseDrv.USB.Basic, 2017/08/03, Add for charger  electricity */
+        if (!of_property_read_u32(np, "g_FG_PSEUDO1_T0", &val)) {
+            fg_cust_data.pseudo1_t0 = (int)val * UNIT_TRANS_100;
+            bm_debug("Get g_FG_PSEUDO1_T0: %d\n",
+                 fg_cust_data.pseudo1_t0);
+        } else {
+            bm_err("Get g_FG_PSEUDO1_T0 failed\n");
+        }
+        
+        if (!of_property_read_u32(np, "g_FG_PSEUDO1_T1", &val)) {
+            fg_cust_data.pseudo1_t1 = (int)val * UNIT_TRANS_100;
+            bm_debug("Get g_FG_PSEUDO1_T1: %d\n",
+                 fg_cust_data.pseudo1_t1);
+        } else {
+            bm_err("Get g_FG_PSEUDO1_T1 failed\n");
+        }
+        
+        if (!of_property_read_u32(np, "g_FG_PSEUDO1_T2", &val)) {
+            fg_cust_data.pseudo1_t2 = (int)val * UNIT_TRANS_100;
+            bm_debug("Get g_FG_PSEUDO1_T2: %d\n",
+                 fg_cust_data.pseudo1_t2);
+        } else {
+            bm_err("Get g_FG_PSEUDO1_T2 failed\n");
+        }
+        
+        if (!of_property_read_u32(np, "g_FG_PSEUDO1_T3", &val)) {
+            fg_cust_data.pseudo1_t3 = (int)val * UNIT_TRANS_100;
+            bm_debug("Get g_FG_PSEUDO1_T3: %d\n",
+                 fg_cust_data.pseudo1_t3);
+        } else {
+            bm_err("Get g_FG_PSEUDO1_T3 failed\n");
+        }
+        
+        if (!of_property_read_u32(np, "g_FG_PSEUDO1_T4", &val)) {
+            fg_cust_data.pseudo1_t4 = (int)val * UNIT_TRANS_100;
+            bm_debug("Get g_FG_PSEUDO1_T4: %d\n",
+                 fg_cust_data.pseudo1_t4);
+        } else {
+            bm_err("Get g_FG_PSEUDO1_T4 failed\n");
+        }
+#endif
+#endif
+
 	for (i = 0; i < fg_table_cust_data.active_table_number; i++) {
 		sprintf(node_name, "battery%d_profile_t%d_num", bat_id, i);
 		fg_read_dts_val(np, node_name,
@@ -1610,9 +1674,15 @@ void sw_check_bat_plugout(void)
 				is_fg_disabled());
 
 			battery_notifier(EVENT_BATTERY_PLUG_OUT);
-			battery_main.BAT_STATUS = POWER_SUPPLY_STATUS_UNKNOWN;
-			wakeup_fg_algo(FG_INTR_BAT_PLUGOUT);
-			battery_update(&battery_main);
+#ifndef VENDOR_EDIT
+/* tongfeng.huang@EXP.BSP.CHG.basic, 2018/01/24, Remove for charge driver */
+            battery_main.BAT_STATUS = POWER_SUPPLY_STATUS_UNKNOWN;
+            wakeup_fg_algo(FG_INTR_BAT_PLUGOUT);
+            battery_update(&battery_main);
+#else /* VENDOR_EDIT */
+            wakeup_fg_algo(FG_INTR_BAT_PLUGOUT);
+#endif /* VENDOR_EDIT */
+
 			kernel_power_off();
 		}
 	}
@@ -1991,10 +2061,25 @@ void fg_bat_temp_int_init(void)
 
 	if (fg_interrupt_check() == false)
 		return;
+#ifdef VENDOR_EDIT
+    if (is_vooc_project()) {
+    	return;
+    } else {
+     	tmp = force_get_tbat(true);
+
+    	fg_bat_new_ht = TempToBattVolt(tmp + 1, 1);
+    	fg_bat_new_lt = TempToBattVolt(tmp - 1, 0);
+
+    	gauge_dev_enable_battery_tmp_lt_interrupt(gm.gdev, false, 0);
+    	gauge_dev_enable_battery_tmp_ht_interrupt(gm.gdev, false, 0);
+    	gauge_dev_enable_battery_tmp_lt_interrupt(
+    		gm.gdev, true, fg_bat_new_lt);
+    	gauge_dev_enable_battery_tmp_ht_interrupt(
+    		gm.gdev, true, fg_bat_new_ht);
+    }
+#else
+
 #if defined(CONFIG_MTK_DISABLE_GAUGE) || defined(FIXED_TBAT_25)
-	tmp = 1;
-	fg_bat_new_ht = 1;
-	fg_bat_new_lt = 1;
 	return;
 #else
 	tmp = force_get_tbat(true);
@@ -2009,25 +2094,42 @@ void fg_bat_temp_int_init(void)
 	gauge_dev_enable_battery_tmp_ht_interrupt(
 		gm.gdev, true, fg_bat_new_ht);
 #endif
+#endif
 }
 
 void fg_bat_temp_int_internal(void)
 {
 	int tmp = 0;
 	int fg_bat_new_ht, fg_bat_new_lt;
+#ifdef VENDOR_EDIT
+/* Qiao.Hu@EXP.BSP.BaseDrv.CHG.Basic, 2017/08/15, Add for charger full status */
+    if (is_vooc_project()) {
+        return;
+    }
+#endif
 
 	if (is_fg_disabled()) {
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/17, Remove for charge driver */ 
 		battery_main.BAT_batt_temp = 25;
 		battery_update(&battery_main);
+#endif /* VENDOR_EDIT */
+
 		return;
 	}
 
 #if defined(CONFIG_MTK_DISABLE_GAUGE) || defined(FIXED_TBAT_25)
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/17, Remove for charge driver */
 	battery_main.BAT_batt_temp = 25;
 	battery_update(&battery_main);
+#endif /* VENDOR_EDIT */
+#ifdef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/10/16 modified for bring up charging */
 	tmp = 1;
 	fg_bat_new_ht = 1;
 	fg_bat_new_lt = 1;
+#endif/*ODM_HQ_EDIT*/
 	return;
 #else
 	tmp = force_get_tbat(true);
@@ -2063,9 +2165,12 @@ void fg_bat_temp_int_internal(void)
 		gm.fg_bat_tmp_lt, gm.fg_bat_tmp_c_ht,
 		gm.fg_bat_tmp_c_lt,
 		fg_bat_new_lt, fg_bat_new_ht);
-
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/17, Remove for charge driver */
 	battery_main.BAT_batt_temp = tmp;
 	battery_update(&battery_main);
+#endif /* VENDOR_EDIT */
+
 #endif
 }
 
@@ -2131,9 +2236,15 @@ void fg_bat_plugout_int_handler(void)
 
 	if (is_bat_exist == 0) {
 		battery_notifier(EVENT_BATTERY_PLUG_OUT);
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/05, Remove for charge driver */
 		battery_main.BAT_STATUS = POWER_SUPPLY_STATUS_UNKNOWN;
 		wakeup_fg_algo(FG_INTR_BAT_PLUGOUT);
 		battery_update(&battery_main);
+#else /* VENDOR_EDIT */
+        wakeup_fg_algo(FG_INTR_BAT_PLUGOUT);
+#endif /* VENDOR_EDIT */
+		fg_bat_temp_int_sw_check();
 		fg_int_event(gm.gdev, EVT_INT_BAT_PLUGOUT);
 		kernel_power_off();
 	}
@@ -2405,7 +2516,13 @@ void fg_drv_update_hw_status(void)
 
 int battery_update_routine(void *x)
 {
+
+#ifndef VENDOR_EDIT
+    /* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/17, Remove for charge driver */
 	battery_update_psd(&battery_main);
+#endif /* VENDOR_EDIT */
+
+
 	while (1) {
 		wait_event(gm.wait_que,
 			(gm.fg_update_flag > 0)
@@ -2475,6 +2592,7 @@ void fg_daemon_send_data(
 		pret->total_size = prcv->total_size;
 		pret->size = prcv->size;
 		pret->idx = prcv->idx;
+ 
 
 
 	switch (prcv->type) {
@@ -2716,6 +2834,10 @@ void fg_daemon_comm_INT_data(char *rcv, char *ret)
 	case FG_SET_AGING_FACTOR:
 		{
 			gm.aging_factor = prcv->input;
+#ifdef VENDOR_EDIT
+/* Yichun.Chen  PSW.BSP.CHG  2019-07-23  for aging issue */
+			bm_err("FG_SET_AGING_FACTOR aging=%d\n", gm.aging_factor);
+#endif
 		}
 		break;
 	case FG_SET_QMAX:
@@ -2748,20 +2870,18 @@ void fg_daemon_comm_INT_data(char *rcv, char *ret)
 			gm.algo_ocv_to_soc = prcv->input;
 		}
 		break;
-	case FG_SET_CON0_SOFF_VALID:
+#ifdef VENDOR_EDIT
+#if !defined(ODM_HQ_EDIT) && !defined(CONFIG_MACH_MT6768)
+/* Yichun.Chen  PSW.BSP.CHG  2019-07-29  for aging issue */
+	case FG_SET_AG_ERR:
 		{
-			int ori_value = 0;
-
-			gauge_dev_get_info(gm.gdev,
-				GAUGE_MONITOR_SOFF_VALIDTIME, &ori_value);
-
-			gauge_dev_set_info(gm.gdev,
-				GAUGE_MONITOR_SOFF_VALIDTIME, prcv->input);
-
-			bm_err("set GAUGE_MONITOR_SOFF_VALIDTIME ori:%d, new:%d\n",
-				ori_value, prcv->input);
+			gm.ag_detect_err = prcv->input;
+			bm_err("FG_SET_AG_ERR ag_detect_err=%d\n",
+				gm.ag_detect_err);
 		}
 		break;
+#endif
+#endif
 	default:
 		pret->status = -1;
 		bm_err("%s type:%d in:%d out:%d,Retun t:%d,in:%d,o:%d,s:%d\n",
@@ -2847,11 +2967,14 @@ void bmd_ctrl_cmd_from_user(void *nl_data, struct fgd_nl_msg_t *ret_msg)
 			/* charger status need charger API */
 			/* CHR_ERR = -1 */
 			/* CHR_NORMAL = 0 */
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/05, Modify for charge driver */
 			if (battery_main.BAT_STATUS ==
 				POWER_SUPPLY_STATUS_NOT_CHARGING)
 				charger_status = -1;
 			else
 				charger_status = 0;
+#endif /* VENDOR_EDIT */
 
 			ret_msg->fgd_data_len += sizeof(charger_status);
 			memcpy(ret_msg->fgd_data,
@@ -3106,8 +3229,11 @@ void bmd_ctrl_cmd_from_user(void *nl_data, struct fgd_nl_msg_t *ret_msg)
 	case FG_DAEMON_CMD_GET_HW_OCV:
 	{
 		int voltage = 0;
-
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/05, Remove for charge driver */
 		battery_main.BAT_batt_temp = force_get_tbat(true);
+#endif /* VENDOR_EDIT */
+
 		voltage = gauge_get_hwocv();
 		gm.hw_status.hw_ocv = voltage;
 
@@ -3848,15 +3974,22 @@ void bmd_ctrl_cmd_from_user(void *nl_data, struct fgd_nl_msg_t *ret_msg)
 				daemon_ui_soc, gm.ui_soc,
 				gm.disableGM30, old_uisoc, diff.tv_sec);
 			gm.uisoc_oldtime = now_time;
-
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/05, Remove for charge driver */
 			battery_main.BAT_CAPACITY = gm.ui_soc;
 			battery_update(&battery_main);
+#endif /* VENDOR_EDIT */
+
 		} else {
 			bm_debug("[fg_res] FG_DAEMON_CMD_SET_KERNEL_UISOC = %d %d GM3:%d\n",
 				daemon_ui_soc, gm.ui_soc, gm.disableGM30);
 			/* ac_update(&ac_main); */
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/05, Remove for charge driver */
 			battery_main.BAT_CAPACITY = gm.ui_soc;
 			battery_update(&battery_main);
+#endif /* VENDOR_EDIT */
+
 		}
 	}
 	break;
@@ -3970,6 +4103,20 @@ void bmd_ctrl_cmd_from_user(void *nl_data, struct fgd_nl_msg_t *ret_msg)
 	{
 		gm.proc_subcmd = msg->fgd_subcmd;
 		gm.proc_subcmd_para1 = msg->fgd_subcmd_para1;
+
+#ifdef VENDOR_EDIT
+#if !defined(ODM_HQ_EDIT) && !defined(CONFIG_MACH_MT6768)
+/* Yichun.Chen  PSW.BSP.CHG  2019-07-29  for aging issue */
+		if (gm.proc_subcmd_para1 == 888) {
+			memset(gm.ag_log, 0, 2000);
+			strncpy(gm.ag_log, &msg->fgd_data[0],
+				strlen(&msg->fgd_data[0]));
+			bm_err("[fr]FG_DAEMON_CMD_DUMP_LOG:%s\n",
+				gm.ag_log);
+		}
+#endif
+#endif
+
 		memset(gm.proc_log, 0, 4096);
 		strncpy(gm.proc_log, &msg->fgd_data[0],
 			strlen(&msg->fgd_data[0]));
@@ -4383,11 +4530,16 @@ void gm3_log_dump(bool force)
 	/* charger status need charger API */
 	/* CHR_ERR = -1 */
 	/* CHR_NORMAL = 0 */
+#ifndef VENDOR_EDIT
+/* ChaoYing.Chen@EXP.BSP.CHG.basic, 2017/06/05, Remove for charge driver */
 	if (battery_main.BAT_STATUS ==
 		POWER_SUPPLY_STATUS_NOT_CHARGING)
 		gm.log.chr_status = -1;
 	else
 		gm.log.chr_status = 0;
+#else
+    gm.log.chr_status = 0;
+#endif
 
 	car = gauge_get_coulomb();
 

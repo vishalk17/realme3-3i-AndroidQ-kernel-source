@@ -33,14 +33,22 @@
 			interrupts = <4 0>, <6 0>, <7 0>, <9 0>,
 				     <12 0>, <13 0>, <14 0>, <15 0>,
 				     <27 0>, <29 0>, <30 0>, <32 0>,
-				     <35 0>, <40 0>, <48 0>, <60 0>;
+//#ifndef ODM_HQ_EDIT /* zhangchao@ODM.HQ.Charger, 2019/12/13,Modify for OTG */
+//				     <35 0>, <40 0>, <48 0>, <60 0>;
+//#else
+				     <35 0>, <40 0>, <47 0>, <48 0>, <60 0>;
+//#endif
 			interrupt-names = "chg_treg_evt", "chg_mivr_evt",
 					  "pwr_rdy_evt", "chg_batsysuv_evt",
 					  "chg_vsysuv_evt", "chg_vsysov_evt",
 					  "chg_vbatov_evt", "chg_vbusov_evt",
 					  "chg_tmri", "chg_adpbadi",
 					  "chg_rvpi",  "chg_aiccmeasl",
-					  "wdtmri", "pumpx_donei",
+//#ifndef ODM_HQ_EDIT /* zhangchao@ODM.HQ.Charger, 2019/12/13,Modify for OTG */
+//					  "wdtmri", "pumpx_donei",
+//#else
+					  "wdtmri", "pumpx_donei", "bst_olpi",
+//#endif
 					  "attachi", "chrdet_ext_evt";
 			io-channels = <&adc 0>, <&adc 1>, <&adc 3>, <&adc 4>,
 				      <&adc 5>, <&adc 6>, <&adc 8>, <&adc 10>;
@@ -169,17 +177,29 @@
 				  "ldo3_oc_evt", "ldo5_oc_evt",
 				  "ldo1_pgb_evt", "ldo2_pgb_evt",
 				  "ldo3_pgb_evt", "ldo5_pgb_evt";
+		//#ifdef ODM_HQ_EDIT
+		//sunjingtao@ODM.BSP.System  2019/8/28 add for SD card
+		ldo5_ctrls = [00 80 01 2d a4];
+		//#endif // ODM_HQ_EDIT
 		mt_pmic_vfp_ldo_reg: ldo1 {
 			regulator-compatible = "LDO1";
 			regulator-name = "VFP";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <3600000>;
+			/* #ifdef ODM_HQ_EDIT */
+			/* Zhaojunhai@ODM.Fingerprint 20191017 for Fingerprint Bringup */
+			regulator-always-on;
+			/* #endif */
 		};
 		mt_pmic_vtp_ldo_reg: ldo2 {
 			regulator-compatible = "LDO2";
 			regulator-name = "VTP";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <3600000>;
+			/* #ifdef ODM_HQ_EDIT */
+			/* zuoqiquan@ODM.BSP.Sensors 20191105 for LDO2 up */
+			regulator-always-on;
+			/* #endif */
 		};
 		mt_pmic_vmc_ldo_reg: ldo3 {
 			regulator-compatible = "LDO3";

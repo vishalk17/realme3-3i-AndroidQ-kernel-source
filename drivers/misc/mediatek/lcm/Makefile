@@ -31,9 +31,17 @@ subdir-ccflags-$(CONFIG_MTK_FB) += -I$(srctree)/drivers/misc/mediatek/video/$(MT
                                        -I$(srctree)/drivers/misc/mediatek/video/$(MTK_PLATFORM)/videox \
                                        -I$(srctree)/drivers/misc/mediatek/video/include
 
+ifeq ($(HQ_COMPILE_FACTORY_VERSION),yes)
+subdir-ccflags-y += -DATO_ESD_CHECK_DISABLE
+endif
+
 LCM_DEFINES := $(shell echo $(CONFIG_CUSTOM_KERNEL_LCM) | tr a-z A-Z)
 DEFINES += $(foreach LCM,$(LCM_DEFINES),$(LCM))
 DEFINES += MTK_LCM_PHYSICAL_ROTATION=\"$(MTK_LCM_PHYSICAL_ROTATION)\"
 ccflags-$(CONFIG_MTK_LCM) += $(addprefix -D, $(DEFINES))
 ccflags-$(CONFIG_MTK_LCM_DEVICE_TREE_SUPPORT) += -DMTK_LCM_DEVICE_TREE_SUPPORT
+
+#YongPeng.Yi@SWP.MM.Display.LCD.Machine, 2017/11/03, Add for porting lcd driver
+obj-$(CONFIG_MTK_LCM) += power/
+#obj-$(CONFIG_MTK_LCM) += backlight/
 

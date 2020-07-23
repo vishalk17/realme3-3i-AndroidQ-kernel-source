@@ -1535,6 +1535,7 @@ static void configfs_composite_unbind(struct usb_gadget *gadget)
 
 	cdev = get_gadget_data(gadget);
 	gi = container_of(cdev, struct gadget_info, cdev);
+
 	spin_lock_irqsave(&gi->spinlock, flags);
 	gi->unbind = 1;
 	spin_unlock_irqrestore(&gi->spinlock, flags);
@@ -1564,6 +1565,7 @@ static int android_setup(struct usb_gadget *gadget,
 		gi->connected = 1;
 		schedule_work(&gi->work);
 	}
+
 	spin_unlock_irqrestore(&cdev->lock, flags);
 
 	spin_lock_irqsave(&gi->spinlock, flags);

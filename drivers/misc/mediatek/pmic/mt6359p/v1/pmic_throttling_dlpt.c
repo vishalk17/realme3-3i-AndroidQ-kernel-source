@@ -1159,7 +1159,12 @@ int dlpt_notify_handler(void *unused)
 				 */
 				if (power_off_cnt >= 4 &&
 				    mutex_trylock(&pm_mutex)) {
+#ifndef ODM_HQ_EDIT
+/*wangtao@ODM_HQ.BSP.CHG 2020/01/07, add for shutdown use oppo uisoc*/
 					kernel_restart("DLPT reboot system");
+#else
+					power_off_cnt = 0;
+#endif
 					mutex_unlock(&pm_mutex);
 				}
 			} else

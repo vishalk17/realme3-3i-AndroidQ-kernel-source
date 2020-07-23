@@ -105,6 +105,14 @@ obj-$(CONFIG_TOUCHSCREEN_ZET6223)	+= zet6223.o
 obj-$(CONFIG_TOUCHSCREEN_ZFORCE)	+= zforce_ts.o
 obj-$(CONFIG_TOUCHSCREEN_COLIBRI_VF50)	+= colibri-vf50-ts.o
 obj-$(CONFIG_TOUCHSCREEN_ROHM_BU21023)	+= rohm_bu21023.o
-TOUCH_LISTS := $(subst ",,$(CONFIG_TOUCHSCREEN_MTK_TOUCH))
-obj-y += $(foreach TOUCH,$(TOUCH_LISTS),$(TOUCH)/)
+#Benshan.Cheng@ODM_HQ.MM.Tp, 2019/10/21, add tp driver
+#ifeq ($(ODM_HQ_EDIT),yes)
+ifneq ($(findstring $(CONFIG_MACH_MT6768)$(CONFIG_MACH_MT6785),  yes  yes),)
+obj-$(CONFIG_TOUCHPANEL_OPPO) += oppo_touchscreen/
+obj-$(CONFIG_TOUCHPANEL_OPPO) += touch.o
+endif
 
+#liunianliang@ODM.HQ.System for avoid build error
+ifndef CONFIG_TOUCHPANEL_OPPO
+obj-y += avoid_build_error.o
+endif

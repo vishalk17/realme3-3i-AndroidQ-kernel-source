@@ -91,8 +91,14 @@ static atomic_t g_pwm_backlight[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(-1), ATOMIC_INIT(-1) };
 static atomic_t g_pwm_en[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(-1), ATOMIC_INIT(-1) };
+#ifdef ODM_HQ_EDIT
+/* Liyan@ODM.HQ.Multimedia.LCM 2019/08/20 modified for 2048 steps backlight */
+static atomic_t g_pwm_max_backlight[PWM_TOTAL_MODULE_NUM] = {
+	ATOMIC_INIT(2047), ATOMIC_INIT(2047) };
+#else /* ODM_HQ_EDIT */
 static atomic_t g_pwm_max_backlight[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(1023), ATOMIC_INIT(1023) };
+#endif /* ODM_HQ_EDIT */
 static atomic_t g_pwm_is_power_on[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(0), ATOMIC_INIT(0) };
 static atomic_t g_pwm_value_before_power_off[PWM_TOTAL_MODULE_NUM] = {
@@ -110,8 +116,14 @@ static atomic_t g_pwm_is_change_state[PWM_TOTAL_MODULE_NUM] = {
 #ifndef CONFIG_FPGA_EARLY_PORTING
 static atomic_t g_pwm_backlight[PWM_TOTAL_MODULE_NUM] = { ATOMIC_INIT(-1) };
 static atomic_t g_pwm_en[PWM_TOTAL_MODULE_NUM] = { ATOMIC_INIT(-1) };
+#ifdef ODM_HQ_EDIT
+/* Liyan@ODM.HQ.Multimedia.LCM 2019/08/20 modified for 2048 steps backlight */
+static atomic_t g_pwm_max_backlight[PWM_TOTAL_MODULE_NUM] = {
+	ATOMIC_INIT(2047) };
+#else /* ODM_HQ_EDIT */
 static atomic_t g_pwm_max_backlight[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(1023) };
+#endif /* ODM_HQ_EDIT */
 static atomic_t g_pwm_is_power_on[PWM_TOTAL_MODULE_NUM] = { ATOMIC_INIT(0) };
 static atomic_t g_pwm_value_before_power_off[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(0) };
@@ -320,9 +332,16 @@ static int disp_pwm_config_init(enum DISP_MODULE_ENUM module,
 	DISP_REG_MASK(cmdq, reg_base + DISP_PWM_CON_0_OFF, pwm_div << 16,
 	(0x3ff << 16));
 
+#if defined(ODM_HQ_EDIT) && defined(CONFIG_MACH_MT6771)
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver. */
+	/* 2048 levels */
+	DISP_REG_MASK(cmdq, reg_base + DISP_PWM_CON_1_OFF, 2047, 0x7ff);
+	/* We don't init the backlight here until AAL/Android give */
+#else
 	/* 1024 levels */
 	DISP_REG_MASK(cmdq, reg_base + DISP_PWM_CON_1_OFF, 1023, 0x3ff);
 	/* We don't init the backlight here until AAL/Android give */
+#endif
 #endif
 	return 0;
 }
@@ -612,13 +631,23 @@ int disp_pwm_set_backlight_cmdq(enum disp_pwm_id_t id,
 
 		if (level_1024 > 0) {
 			DISP_REG_MASK(cmdq, reg_base + DISP_PWM_CON_1_OFF,
+#if defined(ODM_HQ_EDIT) && defined(CONFIG_MACH_MT6771)
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver. */
+				level_1024 << 16, 0x3fff << 16);
+#else
 				level_1024 << 16, 0x1fff << 16);
+#endif
 
 			disp_pwm_set_enabled(cmdq, id, 1);
 		} else {
 			/* Avoid to set 0 */
 			DISP_REG_MASK(cmdq, reg_base + DISP_PWM_CON_1_OFF,
+#if defined(ODM_HQ_EDIT) && defined(CONFIG_MACH_MT6771)
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver. */
+				1 << 16, 0x3fff << 16);
+#else
 				1 << 16, 0x1fff << 16);
+#endif
 			/* To save power */
 			disp_pwm_set_enabled(cmdq, id, 0);
 		}

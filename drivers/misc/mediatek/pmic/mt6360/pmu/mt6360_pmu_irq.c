@@ -23,12 +23,32 @@
 #include <linux/irq.h>
 #include "../inc/mt6360_pmu.h"
 
+#ifdef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
+extern bool mt6360_get_vbus_status(void);
+extern int mt6360_chg_enable(bool en);
+extern int mt6360_chg_enable_wdt(bool enable);
+extern bool oppo_chg_wake_update_work(void);
+extern bool oppo_vooc_get_fastchg_started(void);
+extern int oppo_vooc_get_adapter_update_status(void);
+extern void oppo_vooc_reset_fastchg_after_usbout(void);
+extern void oppo_chg_clear_chargerid_info(void);
+extern void oppo_chg_set_chargerid_switch_val(int);
+extern bool oppo_vooc_get_fastchg_to_normal(void);
+extern bool oppo_vooc_get_fastchg_to_warm(void);
+extern void oppo_chg_set_charger_type_unknown(void);
+#endif /*ODM_HQ_EDIT*/
+
 static irqreturn_t mt6360_pmu_irq_handler(int irq, void *data)
 {
 	struct mt6360_pmu_info *mpi = data;
 	u8 irq_events[MT6360_PMU_IRQ_REGNUM] = {0};
 	u8 irq_masks[MT6360_PMU_IRQ_REGNUM] = {0};
 	int i, j, ret;
+#ifdef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
+	bool vbus_status = false;
+#endif
 
 	mt_dbg(mpi->dev, "%s ++\n", __func__);
 	pm_runtime_get_sync(mpi->dev);
@@ -53,9 +73,50 @@ static irqreturn_t mt6360_pmu_irq_handler(int irq, void *data)
 				if ((i == 5 && j == 4) || (i == 0 && j == 6))
 					mt_dbg(mpi->dev,
 					       "handle_irq [%d,%d]\n", i, j);
+#ifdef ODM_HQ_EDIT
+/* zhangchao@ODM.HQ.Charger 2019/09/4 modified for bring up charging */
+				else {
+					if (i == 7) {
+						vbus_status = mt6360_get_vbus_status();
+						printk(KERN_ERR "!!!!! mt6360_pmu_irq_handler: [%d]\n", vbus_status);
+						mt6360_chg_enable_wdt(vbus_status);
+						if (oppo_vooc_get_fastchg_started() == true
+								&& oppo_vooc_get_adapter_update_status() != 1) {
+							printk(KERN_ERR "[OPPO_CHG] %s oppo_vooc_get_fastchg_started = true!\n", __func__);
+							if (vbus_status) {
+								/*vooc adapters MCU vbus reset time is about 800ms(default standard),
+								 * but some adapters reset time is about 350ms, so when vbus plugin irq
+								 * was trigger, fastchg_started is true(default standard is false).
+								 */
+								mt6360_chg_enable(false);
+							}
+						} else {
+							if (!vbus_status) {
+								oppo_vooc_reset_fastchg_after_usbout();
+								if (oppo_vooc_get_fastchg_started() == false) {
+									oppo_chg_set_chargerid_switch_val(0);
+									oppo_chg_clear_chargerid_info();
+								}
+								oppo_chg_set_charger_type_unknown();
+							} else {
+								if ((oppo_vooc_get_fastchg_to_normal() == true)
+										|| (oppo_vooc_get_fastchg_to_warm() == true)) {
+									mt6360_chg_enable(false);
+								}
+							}
+							oppo_chg_wake_update_work();  //zhangchao add //
+							printk(KERN_ERR "!!!!! zhangchao mt6360_pmu_irq_handler run update work :\n");
+						}
+					} else {
+						dev_dbg(mpi->dev,
+							"handle_irq [%d,%d]\n", i, j);					
+					}
+				}
+#else
 				else
 					dev_dbg(mpi->dev,
 						"handle_irq [%d,%d]\n", i, j);
+#endif /* ODM_HQ_EDIT */
 				handle_nested_irq(ret);
 			} else
 				dev_err(mpi->dev, "unmapped [%d,%d]\n", i, j);

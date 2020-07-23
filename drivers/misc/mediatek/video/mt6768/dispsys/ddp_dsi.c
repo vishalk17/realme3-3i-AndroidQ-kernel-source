@@ -51,6 +51,13 @@
 
 #include <asm/arch_timer.h>
 
+#ifdef ODM_HQ_EDIT
+//Benshan.Cheng@BSP.TP add for euler lcd bring up
+#ifdef CONFIG_SET_LCD_BIAS_ODM_HQ
+#include "../../../lcd_bias/lcd_bias.h"
+#endif //CONFIG_SET_LCD_BIAS_ODM_HQ
+#endif
+
 /*****************************************************************************/
 enum MIPITX_PAD_VALUE {
 	PAD_D2P_V = 0,
@@ -1616,10 +1623,20 @@ int mipi_clk_change(int msg, int en)
 	_primary_path_lock(__func__);
 
 	if (en) {
+#ifdef ODM_HQ_EDIT
+/* Liyan@ODM.HQ.Multimedia.LCM 2020/03/19 modified for mipi clk change */
+		if (!strcmp(mtkfb_lcm_name, "ili9881h_boe")) {
+			def_data_rate = 720;
+			def_dsi_hbp = 0x2C; /* adaptive HBP value 18 */
+		} else if (!strcmp(mtkfb_lcm_name, "nt36525b_inx")) {
+			def_data_rate = 750;
+			def_dsi_hbp = 0xB6; /* adaptive HBP value 60 */
+#else
 		if (!strcmp(mtkfb_lcm_name,
 		"nt35521_hd_dsi_vdo_truly_rt5081_drv")) {
 			def_data_rate = 460;
 			def_dsi_hbp = 0xD2; /* adaptive HBP value */
+#endif
 		} else {
 			DISPERR("%s,lcm(%s) not support change mipi clock\n",
 				__func__, mtkfb_lcm_name);
@@ -1840,8 +1857,7 @@ void DSI_PHY_TIMCONFIG(enum DISP_MODULE_ENUM module,
 
 	hs_trail_m = 1;
 	hs_trail_n = (dsi_params->HS_TRAIL == 0) ?
-		(NS_TO_CYCLE(((hs_trail_m * 0x4 * ui) + 0x50)
-		* dsi_params->PLL_CLOCK * 2, 0x1F40) + 0x1) :
+		NS_TO_CYCLE(((hs_trail_m * 0x4 * ui) + 0x50), cycle_time) :
 		dsi_params->HS_TRAIL;
 	/* +3 is recommended from designer becauase of HW latency */
 	timcon0.HS_TRAIL = (hs_trail_m > hs_trail_n) ? hs_trail_m : hs_trail_n;
@@ -1864,8 +1880,8 @@ void DSI_PHY_TIMCONFIG(enum DISP_MODULE_ENUM module,
 
 	timcon0.LPX =
 		(dsi_params->LPX == 0) ?
-		(NS_TO_CYCLE(dsi_params->PLL_CLOCK * 2 * 0x4b, 0x1F40) + 0x1) :
-		dsi_params->LPX;
+		NS_TO_CYCLE(0x55, cycle_time) : dsi_params->LPX;
+
 	if (timcon0.LPX < 1)
 		timcon0.LPX = 1;
 
@@ -1890,8 +1906,8 @@ void DSI_PHY_TIMCONFIG(enum DISP_MODULE_ENUM module,
 
 	timcon2.CLK_TRAIL =
 		((dsi_params->CLK_TRAIL == 0) ?
-		NS_TO_CYCLE(0x64 * dsi_params->PLL_CLOCK * 2,
-		0x1F40) : dsi_params->CLK_TRAIL) + 0x01;
+		NS_TO_CYCLE(0x60, cycle_time) :
+		dsi_params->CLK_TRAIL) + 0x01;
 	/* CLK_TRAIL can't be 1. */
 	if (timcon2.CLK_TRAIL < 2)
 		timcon2.CLK_TRAIL = 2;
@@ -1902,10 +1918,18 @@ void DSI_PHY_TIMCONFIG(enum DISP_MODULE_ENUM module,
 		NS_TO_CYCLE(0x190, cycle_time) :
 		dsi_params->CLK_ZERO;
 
+#ifdef ODM_HQ_EDIT
+/* Liyan@ODM.HQ.Multimedia.LCM 2020/03/25 modified for mipi clk-prepare timing */
 	timcon3.CLK_HS_PRPR =
 		(dsi_params->CLK_HS_PRPR == 0) ?
-		NS_TO_CYCLE(0x50 * dsi_params->PLL_CLOCK * 2,
-		0x1F40) : dsi_params->CLK_HS_PRPR;
+		NS_TO_CYCLE(0x50, cycle_time) :
+		dsi_params->CLK_HS_PRPR;
+#else
+	timcon3.CLK_HS_PRPR =
+		(dsi_params->CLK_HS_PRPR == 0) ?
+		NS_TO_CYCLE(0x40, cycle_time) :
+		dsi_params->CLK_HS_PRPR;
+#endif
 
 	if (timcon3.CLK_HS_PRPR < 1)
 		timcon3.CLK_HS_PRPR = 1;
@@ -4152,6 +4176,16 @@ unsigned int DSI_dcs_read_lcm_reg_v3_wrapper_DSIDUAL(char *out,
 			out, cmds, len);
 }
 
+#ifdef ODM_HQ_EDIT
+/* Benshan.Cheng@ODM.Multimedia.LCD  2019/08/27 add for LCD bias setting */
+#ifdef CONFIG_SET_LCD_BIAS_ODM_HQ
+static void lcm_set_lcd_bias_en(unsigned int en, unsigned int seq, unsigned int value)
+{
+        lcd_bias_set_vspn(en, seq, value);
+}
+#endif //CONFIG_SET_LCD_BIAS_ODM_HQ
+#endif //ODM_HQ_EDIT
+
 /* remove later */
 long lcd_enp_bias_setting(unsigned int value)
 {
@@ -4290,6 +4324,12 @@ int ddp_dsi_set_lcm_utils(enum DISP_MODULE_ENUM module,
 	utils->set_gpio_pull_enable =
 		(int (*)(unsigned int, unsigned char))mt_set_gpio_pull_enable;
 #else
+#ifdef ODM_HQ_EDIT
+/* Benshan.Cheng@ODM.Multimedia.LCD  2019/08/27 add for LCD bias setting */
+#ifdef CONFIG_SET_LCD_BIAS_ODM_HQ
+			utils->set_lcd_bias_en = lcm_set_lcd_bias_en;
+#endif //CONFIG_SET_LCD_BIAS_ODM_HQ
+#endif //ODM_HQ_EDIT
 	utils->set_gpio_lcd_enp_bias = lcd_enp_bias_setting;
 #endif
 #endif

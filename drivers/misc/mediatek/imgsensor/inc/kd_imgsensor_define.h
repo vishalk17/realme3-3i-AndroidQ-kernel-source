@@ -25,6 +25,11 @@
 #include <linux/compat.h>
 #endif
 
+#ifndef VENDOR_EDIT
+//Lijian@ODM.Camera.Drv 20190827 for snesor bringup
+#define VENDOR_EDIT
+#endif
+
 /*************************************************
  *
  **************************************************/
@@ -33,12 +38,26 @@
 /* #undef BOOL */
 /* #define BOOL signed int */
 #ifndef _MEDIA_TYPES_H
+#ifdef VENDOR_EDIT
+/* Lijian@ODM.Camera.Drv 20190827 for snesor bringup */
+typedef unsigned char MUINT8;
+typedef unsigned short MUINT16;
+typedef unsigned int MUINT32;
+typedef signed char MINT8;
+typedef signed short MINT16;
+typedef signed int MINT32;
+#else
 #define MUINT8 unsigned char
 #define MUINT16 unsigned short
 #define MUINT32 unsigned int
 #define MINT8 signed char
 #define MINT16 signed short
 #define MINT32 signed int
+#endif
+#endif
+
+#ifndef VENDOR_EDIT
+#define VENDOR_EDIT
 #endif
 
 /************************************************************************
@@ -72,13 +91,13 @@ enum {
 	BINNING_SUMMED
 };
 
-enum ISP_DRIVING_CURRENT_ENUM {
+typedef enum ISP_DRIVING_CURRENT_ENUM {
 	ISP_DRIVING_2MA = 0,
 	ISP_DRIVING_4MA,
 	ISP_DRIVING_6MA,
 	ISP_DRIVING_8MA,
 	ISP_DRIVING_MAX_NUM
-};
+}ISP_DRIVING_CURRENT_ENUM;
 
 enum {
 	IMAGE_NORMAL = 0,
@@ -87,7 +106,15 @@ enum {
 	IMAGE_HV_MIRROR
 };
 
-enum MSDK_SCENARIO_ID_ENUM {
+#ifdef VENDOR_EDIT
+enum {
+    SECURE_NONE = 0x00,
+    SECURE_STATIC = 0x01,
+    SECURE_DYNAMIC = 0x02,
+};
+#endif
+
+typedef enum MSDK_SCENARIO_ID_ENUM {
 	MSDK_SCENARIO_ID_CAMERA_PREVIEW = 0,
 	MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG,
 	MSDK_SCENARIO_ID_VIDEO_PREVIEW,
@@ -106,13 +133,13 @@ enum MSDK_SCENARIO_ID_ENUM {
 	MSDK_SCENARIO_ID_CAMERA_3D_VIDEO,
 	MSDK_SCENARIO_ID_TV_OUT,
 	MSDK_SCENARIO_ID_MAX,
-};
+}MSDK_SCENARIO_ID_ENUM;
 
 
-enum ACDK_CAMERA_OPERATION_MODE_ENUM {
+typedef enum ACDK_CAMERA_OPERATION_MODE_ENUM {
 	MSDK_CAMERA_OPERATION_NORMAL_MODE = 0,
 	MSDK_CAMERA_OPERATION_META_MODE
-};
+}ACDK_CAMERA_OPERATION_MODE_ENUM;
 
 
 /************************************************************************
@@ -135,7 +162,12 @@ enum ACDK_CAMERA_OPERATION_MODE_ENUM {
 #define SENSOR_SLAVE_SYNC_MODE 2
 
 #define SENSOR_FEATURE_START                     3000
-enum ACDK_SENSOR_FEATURE_ENUM {
+#ifdef VENDOR_EDIT
+/*Henry.Chang@Camera.Driver add for 18531 ModuleSN*/
+#define IMGSENSOR_MODULE_SN_LENGTH       (16)
+#endif
+
+typedef enum ACDK_SENSOR_FEATURE_ENUM {
 	SENSOR_FEATURE_BEGIN = SENSOR_FEATURE_START,
 	SENSOR_FEATURE_GET_RESOLUTION,
 	SENSOR_FEATURE_GET_PERIOD,
@@ -270,61 +302,71 @@ enum ACDK_SENSOR_FEATURE_ENUM {
 	SENSOR_FEATURE_GET_PIXEL_CLOCK_FREQ_BY_SCENARIO,
 	SENSOR_FEATURE_GET_PERIOD_BY_SCENARIO,
 	SENSOR_FEATURE_GET_BINNING_TYPE,
+	SENOSR_FEATURE_GET_OFFSET_TO_START_OF_EXPOSURE,
 	SENSOR_FEATURE_GET_Y_AVERAGE,
+    #ifdef VENDOR_EDIT
+	/*zhaozhengtao 2016/02/19,modify for different module*/
+	SENSOR_FEATURE_CHECK_MODULE_ID,
+	/*Henry.Chang@camera.driver 20181129, add for sensor Module SET*/
+	SENSOR_FEATURE_GET_MODULE_SN,
+	SENSOR_FEATURE_SET_SENSOR_OTP,
+	/*Henry.Chang@Camera.Driver modify for ModuleInfo 2019/05/30*/
+	SENSOR_FEATURE_GET_MODULE_INFO,
+	#endif
 	SENSOR_FEATURE_MAX
-};
+} ACDK_SENSOR_FEATURE_ENUM;
 
-enum SENSOR_STATE_ENUM {
+typedef enum SENSOR_STATE_ENUM {
 	SENSOR_STATE_CLOSE = 0,
 	SENSOR_STATE_OPEN,
 	SENSOR_STATE_STREAMING,
 	SENSOR_STATE_STANDBY,
-};
+} SENSOR_STATE_ENUM;
 
-enum SENSOR_TEMPERATURE_STATE_ENUM {
+typedef enum SENSOR_TEMPERATURE_STATE_ENUM {
 	SENSOR_TEMPERATURE_UNKNOWN_STATUS           = (1 << 0),
 	SENSOR_TEMPERATURE_VALID                    = (1 << 1),
 	SENSOR_TEMPERATURE_CANNOT_SEARCH_SENSOR     = (1 << 2),
 	SENSOR_TEMPERATURE_NOT_SUPPORT_THERMAL      = (1 << 3),
 	SENSOR_TEMPERATURE_NOT_POWER_ON             = (1 << 4),
 	SENSOR_TEMPERATURE_MAX
-};
+} SENSOR_TEMPERATURE_STATE_ENUM;
 
-enum ACDK_SENSOR_AF_STATUS_ENUM {
+typedef enum ACDK_SENSOR_AF_STATUS_ENUM {
 	SENSOR_AF_IDLE = 0,
 	SENSOR_AF_FOCUSING,
 	SENSOR_AF_FOCUSED,
 	SENSOR_AF_ERROR,
 	SENSOR_AF_SCENE_DETECTING,
 	SENSOR_AF_STATUS_MAX
-};
+} ACDK_SENSOR_AF_STATUS_ENUM;
 
-enum ACDK_SENSOR_AE_STATUS_ENUM {
+typedef enum ACDK_SENSOR_AE_STATUS_ENUM {
 	SENSOR_AE_IDLE = 0,
 	SENSOR_AE_EXPOSING,
 	SENSOR_AE_EXPOSED,
 	SENSOR_AE_ERROR,
 	SENSOR_AE_LOCKED
-};
+} ACDK_SENSOR_AE_STATUS_ENUM;
 
-enum ACDK_SENSOR_AWB_STATUS_ENUM {
+typedef enum ACDK_SENSOR_AWB_STATUS_ENUM {
 	SENSOR_AWB_IDLE = 0,
 	SENSOR_AWB_BALANCING,
 	SENSOR_AWB_BALANCED,
 	SENSOR_AWB_ERROR,
 	SENSOR_AWB_LOCKED
-};
+} ACDK_SENSOR_AWB_STATUS_ENUM;
 
 
 
-enum ACDK_SENSOR_INTERFACE_TYPE_ENUM {
+typedef enum ACDK_SENSOR_INTERFACE_TYPE_ENUM {
 	SENSOR_INTERFACE_TYPE_PARALLEL = 0,
 	SENSOR_INTERFACE_TYPE_MIPI,
 	SENSOR_INTERFACE_TYPE_SERIAL,/* add for ATV using serial interface */
 	SENSOR_INTERFACE_TYPE_MAX
-};
+} ACDK_SENSOR_INTERFACE_TYPE_ENUM;
 
-enum ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM {
+typedef enum ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM {
 	SENSOR_OUTPUT_FORMAT_RAW_B = 0,
 	SENSOR_OUTPUT_FORMAT_RAW_Gb,
 	SENSOR_OUTPUT_FORMAT_RAW_Gr,
@@ -359,35 +401,34 @@ enum ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM {
 	SENSOR_OUTPUT_FORMAT_RAW_4CELL_HW_BAYER_Gr,
 	SENSOR_OUTPUT_FORMAT_RAW_4CELL_HW_BAYER_R,
 	SENSOR_OUTPUT_FORMAT_RAW8_MONO,
-	SENSOR_OUTPUT_FORMAT_RAW_IR,
-};
+} ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM;
 
-enum ACDK_SENSOR_MIPI_LANE_NUMBER_ENUM {
+typedef enum ACDK_SENSOR_MIPI_LANE_NUMBER_ENUM {
 	SENSOR_MIPI_1_LANE = 0,
 	SENSOR_MIPI_2_LANE,
 	SENSOR_MIPI_3_LANE,
 	SENSOR_MIPI_4_LANE
-};
+} ACDK_SENSOR_MIPI_LANE_NUMBER_ENUM;
 
-enum SENSOR_SCAM_DATA_CHANNEL_ENUM {
+typedef enum SENSOR_SCAM_DATA_CHANNEL_ENUM {
 	SCAM_1_DATA_CHANNEL = 0,
 	SCAM_2_DATA_CHANNEL,
 	SCAM_3_DATA_CHANNEL,
 	SCAM_4_DATA_CHANNEL,
-};
+} SENSOR_SCAM_DATA_CHANNEL_ENUM;
 
-enum SENSOR_MIPI_TYPE_ENUM {
+typedef enum SENSOR_MIPI_TYPE_ENUM {
 	MIPI_OPHY_NCSI2 = 0,
 	MIPI_OPHY_CSI2  = 1,
 	MIPI_CPHY       = 2,
-};
+} SENSOR_MIPI_TYPE_ENUM;
 
-enum SENSOR_SETTLEDELAY_MODE_ENUM {
+typedef enum SENSOR_SETTLEDELAY_MODE_ENUM {
 	MIPI_SETTLEDELAY_AUTO = 0,
 	MIPI_SETTLEDELAY_MANUAL = 1,
-};
+} SENSOR_SETTLEDELAY_MODE_ENUM;
 
-enum SENSOR_DPCM_TYPE_ENUM {
+typedef enum SENSOR_DPCM_TYPE_ENUM {
 	COMP8_NONE  = 0,
 	COMP8_DI_30 = 0x30,
 	COMP8_DI_31 = 0x31,
@@ -398,9 +439,22 @@ enum SENSOR_DPCM_TYPE_ENUM {
 	COMP8_DI_36 = 0x36,
 	COMP8_DI_37 = 0x37,
 	COMP8_DI_2A = 0x2A,
-};
+} SENSOR_DPCM_TYPE_ENUM;
 
-struct ACDK_SENSOR_RESOLUTION_INFO_STRUCT {
+
+#ifdef VENDOR_EDIT
+/*Henry.Chang@camera.driver 20181129, add for sensor Module SET*/
+#define OPPO_STEREO_CALI_DATA_LENGTH     (1561)
+typedef struct {
+  MUINT32 uSensorId;
+  MUINT32 uDeviceId;
+  MUINT16 baseAddr;
+  MUINT16 dataLength;
+  MUINT8  uData[OPPO_STEREO_CALI_DATA_LENGTH];
+} ACDK_SENSOR_ENGMODE_STEREO_STRUCT, *PACDK_SENSOR_ENGMODE_STEREO_STRUCT;
+#endif
+
+typedef struct ACDK_SENSOR_RESOLUTION_INFO_STRUCT {
 	MUINT16 SensorPreviewWidth;
 	MUINT16 SensorPreviewHeight;
 	MUINT16 SensorFullWidth;
@@ -483,10 +537,10 @@ struct ACDK_SENSOR_RESOLUTION_INFO_STRUCT {
 
 	/* from effective height to output height */
 	MUINT16 Sensor3DVideoHeightOffset;
-};
+} ACDK_SENSOR_RESOLUTION_INFO_STRUCT, *PACDK_SENSOR_RESOLUTION_INFO_STRUCT;
 
 
-struct ACDK_SENSOR_INFO_STRUCT {
+typedef struct ACDK_SENSOR_INFO_STRUCT {
 	MUINT16 SensorPreviewResolutionX;
 	MUINT16 SensorPreviewResolutionY;
 	MUINT16 SensorFullResolutionX;
@@ -510,9 +564,9 @@ struct ACDK_SENSOR_INFO_STRUCT {
 	MUINT8 SensorInterruptDelayLines;
 	MINT32 SensorResetActiveHigh;
 	MUINT32 SensorResetDelayCount;
-	enum ACDK_SENSOR_INTERFACE_TYPE_ENUM SensroInterfaceType;
-	enum ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM SensorOutputDataFormat;
-	enum ACDK_SENSOR_MIPI_LANE_NUMBER_ENUM SensorMIPILaneNumber;
+	ACDK_SENSOR_INTERFACE_TYPE_ENUM SensroInterfaceType;
+	ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM SensorOutputDataFormat;
+	ACDK_SENSOR_MIPI_LANE_NUMBER_ENUM SensorMIPILaneNumber;
 	MUINT32 CaptureDelayFrame;
 	MUINT32 PreviewDelayFrame;
 	MUINT32 VideoDelayFrame;
@@ -570,14 +624,14 @@ struct ACDK_SENSOR_INFO_STRUCT {
 	MUINT8 SensorWidthSampling;
 	MUINT8 SensorHightSampling;
 	MUINT8 SensorPacketECCOrder;
-	enum SENSOR_MIPI_TYPE_ENUM MIPIsensorType;
+	SENSOR_MIPI_TYPE_ENUM MIPIsensorType;
 	MUINT8 SensorCaptureOutputJPEG; /* JPEG file or not? */
 	MUINT8 SensorModeNum;
 	MUINT8 IHDR_Support;
 	MUINT16 IHDR_LE_FirstLine;
 	MUINT8 TEMPERATURE_SUPPORT;
 	MUINT8 ZHDR_Mode;
-	enum SENSOR_SETTLEDELAY_MODE_ENUM SettleDelayMode;
+	SENSOR_SETTLEDELAY_MODE_ENUM SettleDelayMode;
 	/* 0: NO PDAF, 1: PDAF Raw Data mode, 2:PDAF VC mode(Full),
 	 * 3:PDAF VC mode(Binning), 4: PDAF DualPD Raw Data mode,
 	 * 5: PDAF DualPD VC mode
@@ -591,7 +645,7 @@ struct ACDK_SENSOR_INFO_STRUCT {
 	MUINT8 IMGSENSOR_DPCM_TYPE_VD1;
 	MUINT8 IMGSENSOR_DPCM_TYPE_VD2;
 	MUINT8 PerFrameCTL_Support;
-	enum SENSOR_SCAM_DATA_CHANNEL_ENUM SCAM_DataNumber;
+	SENSOR_SCAM_DATA_CHANNEL_ENUM SCAM_DataNumber;
 	MUINT8 SCAM_DDR_En;
 	MUINT8 SCAM_CLK_INV;
 	MUINT8 SCAM_DEFAULT_DELAY;
@@ -603,67 +657,69 @@ struct ACDK_SENSOR_INFO_STRUCT {
 	MUINT16 SensorVerFOV;
 	MUINT16 SensorOrientation;
 	MUINT32 SensorModuleID;
-};
+	#ifdef VENDOR_EDIT
+    MUINT8 sensorSecureType;
+	#endif
+} ACDK_SENSOR_INFO_STRUCT, *PACDK_SENSOR_INFO_STRUCT;
 
-#define ACDK_SENSOR_INFO2_STRUCT struct ACDK_SENSOR_INFO_STRUCT
+#define ACDK_SENSOR_INFO2_STRUCT ACDK_SENSOR_INFO_STRUCT
+#define PACDK_SENSOR_INFO2_STRUCT PACDK_SENSOR_INFO_STRUCT
 
-enum ACDK_CCT_REG_TYPE_ENUM {
+typedef enum ACDK_CCT_REG_TYPE_ENUM {
 	ACDK_CCT_REG_ISP = 0,
 	ACDK_CCT_REG_CMOS,
 	ACDK_CCT_REG_CCD
-};
+} ACDK_CCT_REG_TYPE_ENUM;
 
 
 /* R/W ISP/Sensor Register */
-struct ACDK_CCT_REG_RW_STRUCT {
-	enum ACDK_CCT_REG_TYPE_ENUM Type;
+typedef struct ACDK_CCT_REG_RW_STRUCT {
+	ACDK_CCT_REG_TYPE_ENUM Type;
 	MUINT32 RegAddr;
 	MUINT32 RegData;
-};
+} ACDK_CCT_REG_RW_STRUCT, *PACDK_CCT_REG_RW_STRUCT;
 
-struct ACDK_CCT_SENSOR_INFO_STRUCT {
-
-	/* ISP, CMOS_SENSOR, CCD_SENSOR */
-	enum ACDK_CCT_REG_TYPE_ENUM Type;
+typedef struct ACDK_CCT_SENSOR_INFO_STRUCT {
+	ACDK_CCT_REG_TYPE_ENUM Type;    /* ISP, CMOS_SENSOR, CCD_SENSOR */
 	MUINT32 DeviceId;
-	enum ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM StartPixelBayerPtn;
+	ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM StartPixelBayerPtn;
 	MUINT16 GrabXOffset;
 	MUINT16 GrabYOffset;
-};
+} ACDK_CCT_SENSOR_INFO_STRUCT, *PACDK_CCT_SENSOR_INFO_STRUCT;
 
 
 
-enum SENSOR_TYPE_ENUM {
+typedef enum SENSOR_TYPE_ENUM {
 	CMOS_SENSOR = 0,
 	CCD_SENSOR
-};
+} SENSOR_TYPE_ENUM;
 
-struct ACDK_SENSOR_ENG_INFO_STRUCT {
+typedef struct ACDK_SENSOR_ENG_INFO_STRUCT {
 	MUINT16 SensorId;
-	enum SENSOR_TYPE_ENUM SensorType;
-	enum ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM SensorOutputDataFormat;
-};
+	SENSOR_TYPE_ENUM SensorType;
+	ACDK_SENSOR_OUTPUT_DATA_FORMAT_ENUM SensorOutputDataFormat;
+} ACDK_SENSOR_ENG_INFO_STRUCT;
 
-struct ACDK_SENSOR_REG_INFO_STRUCT {
+typedef struct ACDK_SENSOR_REG_INFO_STRUCT {
 	MUINT32 RegAddr;
 	MUINT32 RegData;
-};
+} ACDK_SENSOR_REG_INFO_STRUCT;
 
-struct ACDK_SENSOR_DBG_IMGSENSOR_STRUCT {
+typedef struct ACDK_SENSOR_DBG_IMGSENSOR_STRUCT {
 	MUINT8  debugStruct[32];
 	MUINT8  debugSubstruct[32];
 	MUINT32 isGet;              /* 1 means get, 0 means set */
 	MUINT32 value;
 	MUINT32 sensor_index;
-};
+} ACDK_SENSOR_DBG_IMGSENSOR_STRUCT;
 
-struct ACDK_SENSOR_GROUP_INFO_STRUCT {
+typedef struct ACDK_SENSOR_GROUP_INFO_STRUCT {
 	MUINT32 GroupIdx;
 	MUINT32 ItemCount;
 	MUINT8 *GroupNamePtr;
-};
+} ACDK_SENSOR_GROUP_INFO_STRUCT;
 
-struct ACDK_SENSOR_ITEM_INFO_STRUCT {
+typedef struct ACDK_SENSOR_ITEM_INFO_STRUCT {
 	MUINT32 GroupIdx;
 	MUINT32 ItemIdx;
 	MUINT8 ItemNamePtr[50]; /* item name */
@@ -673,16 +729,16 @@ struct ACDK_SENSOR_ITEM_INFO_STRUCT {
 	MINT32 IsNeedRestart;   /* after set this item need restart */
 	MUINT32 Min;        /* min value of item value */
 	MUINT32 Max;        /* max value of item value */
-};
+} ACDK_SENSOR_ITEM_INFO_STRUCT;
 
-enum ACDK_SENSOR_IMAGE_MIRROR_ENUM {
+typedef enum ACDK_SENSOR_IMAGE_MIRROR_ENUM {
 	ACDK_SENSOR_IMAGE_NORMAL = 0,
 	ACDK_SENSOR_IMAGE_H_MIRROR,
 	ACDK_SENSOR_IMAGE_V_MIRROR,
 	ACDK_SENSOR_IMAGE_HV_MIRROR
-};
+} ACDK_SENSOR_IMAGE_MIRROR_ENUM;
 
-enum ACDK_SENSOR_OPERATION_MODE_ENUM {
+typedef enum ACDK_SENSOR_OPERATION_MODE_ENUM {
 	ACDK_SENSOR_OPERATION_MODE_CAMERA_PREVIEW = 0,
 	ACDK_SENSOR_OPERATION_MODE_VIDEO,
 	ACDK_SENSOR_OPERATION_MODE_STILL_CAPTURE,
@@ -695,37 +751,26 @@ enum ACDK_SENSOR_OPERATION_MODE_ENUM {
 	ACDK_SENSOR_OPERATION_MODE_CUSTOM4,
 	ACDK_SENSOR_OPERATION_MODE_CUSTOM5,
 	ACDK_SENSOR_OPERATION_MODE_MAX
-};
+} ACDK_SENSOR_OPERATION_MODE_ENUM;
 
-struct ACDK_SENSOR_EXPOSURE_WINDOW_STRUCT {
-	/* The first grabed column data of the image sensor in pixel
-	 * clock count
-	 */
-	MUINT16 GrabStartX;
-	/* The first grabed row data of the image sensor in pixel clock count */
-	MUINT16 GrabStartY;
-	/* Exposure window width of image sensor */
-	MUINT16 ExposureWindowWidth;
-	/* Exposure window height of image sensor */
-	MUINT16 ExposureWindowHeight;
-	/* image captured width */
-	MUINT16 ImageTargetWidth;
-	/* image captuerd height */
-	MUINT16 ImageTargetHeight;
-	/* exposure window width of image sensor + dummy pixel */
-	MUINT16 ExposurePixel;
-	/* exposure window width of image sensor + dummy pixel */
-	MUINT16 CurrentExposurePixel;
-	/* exposure window width of image sensor + dummy line */
-	MUINT16 ExposureLine;
+typedef struct ACDK_SENSOR_EXPOSURE_WINDOW_STRUCT {
+	MUINT16 GrabStartX; /* The first grabed column data of the image sensor in pixel clock count */
+	MUINT16 GrabStartY; /* The first grabed row data of the image sensor in pixel clock count */
+	MUINT16 ExposureWindowWidth;    /* Exposure window width of image sensor */
+	MUINT16 ExposureWindowHeight;   /* Exposure window height of image sensor */
+	MUINT16 ImageTargetWidth;   /* image captured width */
+	MUINT16 ImageTargetHeight;  /* image captuerd height */
+	MUINT16 ExposurePixel;  /* exposure window width of image sensor + dummy pixel */
+	MUINT16 CurrentExposurePixel;   /* exposure window width of image sensor + dummy pixel */
+	MUINT16 ExposureLine;   /* exposure window width of image sensor + dummy line */
 	MUINT16 ZoomFactor; /* digital zoom factor */
-};
+} ACDK_SENSOR_EXPOSURE_WINDOW_STRUCT;
 
-struct ACDK_SENSOR_CONFIG_STRUCT {
-	enum ACDK_SENSOR_IMAGE_MIRROR_ENUM SensorImageMirror;
+typedef struct ACDK_SENSOR_CONFIG_STRUCT {
+	ACDK_SENSOR_IMAGE_MIRROR_ENUM SensorImageMirror;
 	MINT32 EnableShutterTansfer;    /* capture only */
 	MINT32 EnableFlashlightTansfer; /* flash light capture only */
-	enum ACDK_SENSOR_OPERATION_MODE_ENUM SensorOperationMode;
+	ACDK_SENSOR_OPERATION_MODE_ENUM SensorOperationMode;
 	MUINT16 ImageTargetWidth;   /* image captured width */
 	MUINT16 ImageTargetHeight;  /* image captuerd height */
 	MUINT16 CaptureShutter; /* capture only */
@@ -733,18 +778,18 @@ struct ACDK_SENSOR_CONFIG_STRUCT {
 	MUINT16 FlashlightOffset;   /* flash light capture only */
 	MUINT16 FlashlightShutFactor;   /* flash light capture only */
 	MUINT16 FlashlightMinShutter;
-	enum ACDK_CAMERA_OPERATION_MODE_ENUM MetaMode;   /* capture only */
+	ACDK_CAMERA_OPERATION_MODE_ENUM MetaMode;   /* capture only */
 	MUINT32 DefaultPclk;    /* Sensor pixel clock(Ex:24000000) */
 	MUINT32 Pixels;     /* Sensor active pixel number */
 	MUINT32 Lines;      /* Sensor active line number */
 	MUINT32 Shutter;    /* Sensor current shutter */
 	MUINT32 FrameLines; /* valid+dummy lines for minimum shutter */
-};
+} ACDK_SENSOR_CONFIG_STRUCT;
 
-enum ACKD_SENSOR_MCLK_ENUM {
+typedef enum ACKD_SENSOR_MCLK_ENUM {
 	MCLK_48MHZ_GROUP = 0x1,
 	MCLK_52MHZ_GROUP = 0x2,
-};
+} ACKD_SENSOR_MCLK_ENUM;
 
 enum IMGSENSOR_MCLK {
 	IMGSENSOR_MCLK_TG_MIN_NUM,
@@ -765,13 +810,13 @@ enum IMGSENSOR_MCLK {
 	IMGSENSOR_MCLK_MAX_NUM = IMGSENSOR_MCLK_FREQ_MAX_NUM,
 };
 
-struct ACDK_SENSOR_MCLK_STRUCT {
+typedef struct ACDK_SENSOR_MCLK_STRUCT {
 	MUINT8  on;
 	MUINT32 freq;
 	MUINT8  TG;
-};
+} ACDK_SENSOR_MCLK_STRUCT;
 
-struct SENSOR_WINSIZE_INFO_STRUCT {
+typedef struct SENSOR_WINSIZE_INFO_STRUCT {
 	MUINT16 full_w;
 	MUINT16 full_h;
 	MUINT16 x0_offset;
@@ -788,14 +833,14 @@ struct SENSOR_WINSIZE_INFO_STRUCT {
 	MUINT16 y2_tg_offset;
 	MUINT16 w2_tg_size;
 	MUINT16 h2_tg_size;
-};
+} SENSOR_WINSIZE_INFO_STRUCT;
 
-struct SENSOR_WINSIZE_STRUCT {
+typedef struct SENSOR_WINSIZE_STRUCT {
 	MUINT32 SensorId;
-	struct SENSOR_WINSIZE_INFO_STRUCT   SensorWinSize;
-};
+	SENSOR_WINSIZE_INFO_STRUCT   SensorWinSize;
+} SENSOR_WINSIZE_STRUCT, *pSENSOR_WINSIZE_STRUCT;
 
-struct SENSOR_VC_INFO_STRUCT {
+typedef struct SENSOR_VC_INFO_STRUCT {
 	MUINT16 VC_Num;
 	MUINT16 VC_PixelNum;
 	MUINT16 ModeSelect;   /* 0: auto mode, 1:direct mode  */
@@ -828,7 +873,7 @@ struct SENSOR_VC_INFO_STRUCT {
 	MUINT16 VC5_DataType;
 	MUINT16 VC5_SIZEH;
 	MUINT16 VC5_SIZEV;
-};
+} SENSOR_VC_INFO_STRUCT, *pSENSOR_VC_INFO_STRUCT;
 
 enum VC_FEATURE {
 	VC_NONE = 0,
@@ -872,21 +917,21 @@ struct SENSOR_VC_INFO2_STRUCT {
 	struct SINGLE_VC_INFO2 vc_info[8];
 	MUINT16 updated;
 };
-struct SET_SENSOR_AWB_GAIN {
+typedef struct SET_SENSOR_AWB_GAIN {
 	MUINT32 ABS_GAIN_GR;
 	MUINT32 ABS_GAIN_R;
 	MUINT32 ABS_GAIN_B;
 	MUINT32 ABS_GAIN_GB;
-};
+} SET_SENSOR_AWB_GAIN, *PSET_SENSOR_AWB_GAIN;
 
-struct SET_SENSOR_ISO {
-	MUINT32 SENSOR_MODE;
-	MUINT32 ISO;
-};
+typedef struct SET_SENSOR_ISO {
+    MUINT32 SENSOR_MODE;
+    MUINT32 ISO;
 
-struct SET_PD_BLOCK_INFO_T {
-	/* start offset of first PD block */
-	MUINT32 i4OffsetX;
+} SET_SENSOR_ISO, *PSET_SENSOR_ISO;
+
+typedef struct SET_PD_BLOCK_INFO_T {
+	MUINT32 i4OffsetX;      /* start offset of first PD block */
 	MUINT32 i4OffsetY;
 	/* PD block pitch */
 	MUINT32 i4PitchX;
@@ -906,24 +951,24 @@ struct SET_PD_BLOCK_INFO_T {
 	/* 1: 1st line is long exposure, 0: 1st line is short exposure*/
 	MUINT32 i4LeFirst;
 	MUINT32 i4Crop[10][2]; /* [scenario][crop] -> (xcrop, ycrop) */
-};
+} SET_PD_BLOCK_INFO_T, *PSET_PD_BLOCK_INFO_T;
 
-enum IMGSENSOR_HDR_SUPPORT_TYPE_ENUM {
+typedef enum IMGSENSOR_HDR_SUPPORT_TYPE_ENUM {
 	HDR_SUPPORT_NA = 0,
 	HDR_SUPPORT_RAW = 1,
 	HDR_SUPPORT_CAMSV = 2,
 	ZHDR_SUPPORT_RAW = 3,
-};
+} IMGSENSOR_HDR_SUPPORT_TYPE_ENUM;
 
-enum IMGSENSOR_HDR_MODE_ENUM {
+typedef enum IMGSENSOR_HDR_MODE_ENUM {
 	HDR_NONE = 0,
 	HDR_RAW = 1,
 	HDR_CAMSV = 2,
 	HDR_RAW_ZHDR = 9,
 	HDR_MultiCAMSV = 10,
-};
+} IMGSENSOR_HDR_MODE_ENUM;
 
-enum IMGSENSOR_PDAF_SUPPORT_TYPE_ENUM {
+typedef enum IMGSENSOR_PDAF_SUPPORT_TYPE_ENUM {
 	PDAF_SUPPORT_NA = 0,
 	PDAF_SUPPORT_RAW = 1,
 	PDAF_SUPPORT_CAMSV = 2,
@@ -931,32 +976,32 @@ enum IMGSENSOR_PDAF_SUPPORT_TYPE_ENUM {
 	PDAF_SUPPORT_RAW_DUALPD = 4,
 	PDAF_SUPPORT_CAMSV_DUALPD = 5,
 	PDAF_SUPPORT_RAW_LEGACY = 6,
-};
+} IMGSENSOR_PDAF_SUPPORT_TYPE_ENUM;
 
-enum SENSOR_PHY_TYPE_ENUM {
+typedef enum SENSOR_PHY_TYPE_ENUM {
 	SENSORIF_PARALLEL = 0,
 	SENSORIF_SERIAL,
 	SENSORIF_MIPI_DHY0,
 	SENSORIF_MIPI_DHY1,
 	SENSORIF_MIPI_DHY2
-};
+} SENSOR_PHY_TYPE_ENUM;
 
-enum INDATA_FORMAT_ENUM {
+typedef enum INDATA_FORMAT_ENUM {
 	DATA_8BIT_FMT        = 0x0,
 	DATA_10BIT_FMT       = 0x1,
 	DATA_12BIT_FMT       = 0x2,
 	DATA_YUV422_FMT      = 0x3,
-};
+} INDATA_FORMAT_ENUM;
 
-struct IMGSENSOR_GPIO_STRUCT {
+typedef struct IMGSENSOR_GPIO_STRUCT {
 	MINT32 mSensorDev;
 	MUINT8 GpioEnable;
-	enum SENSOR_PHY_TYPE_ENUM SensroInterfaceType;
-	enum INDATA_FORMAT_ENUM SensorIndataformat;
-};
-/************************************************************************
- *
- ************************************************************************/
+	SENSOR_PHY_TYPE_ENUM SensroInterfaceType;
+	INDATA_FORMAT_ENUM SensorIndataformat;
+} IMGSENSOR_GPIO_STRUCT;
+/*******************************************************************************
+*
+********************************************************************************/
 
 #define MAXIMUM_NVRAM_CAMERA_SENSOR_FILE_SIZE_KERNEL       4096
 
@@ -968,90 +1013,85 @@ struct IMGSENSOR_GPIO_STRUCT {
 #define MAXIMUM_SENSOR_CCT_REG_NUMBER   100
 #define MAXIMUM_SENSOR_ENG_REG_NUMBER   100
 
-struct SENSOR_REG_STRUCT {
+typedef struct SENSOR_REG_STRUCT {
 	MUINT32 Addr;
 	MUINT32 Para;
-};
+} SENSOR_REG_STRUCT;
 
-struct NVRAM_SENSOR_DATA_STRUCT {
+typedef struct NVRAM_SENSOR_DATA_STRUCT {
 	MUINT32 Version;
 	MUINT32 SensorId;   /* ID of sensor module */
-	struct SENSOR_REG_STRUCT SensorEngReg[MAXIMUM_SENSOR_ENG_REG_NUMBER];
-	struct SENSOR_REG_STRUCT SensorCCTReg[MAXIMUM_SENSOR_CCT_REG_NUMBER];
-	MUINT8 CameraData[
-		MAXIMUM_NVRAM_CAMERA_SENSOR_FILE_SIZE_KERNEL / 2
-		- 8
-		- (sizeof(struct SENSOR_REG_STRUCT) *
-		(MAXIMUM_SENSOR_ENG_REG_NUMBER + MAXIMUM_SENSOR_CCT_REG_NUMBER)
-		)];
-};
+	SENSOR_REG_STRUCT SensorEngReg[MAXIMUM_SENSOR_ENG_REG_NUMBER];
+	SENSOR_REG_STRUCT SensorCCTReg[MAXIMUM_SENSOR_CCT_REG_NUMBER];
+	MUINT8 CameraData[MAXIMUM_NVRAM_CAMERA_SENSOR_FILE_SIZE_KERNEL / 2 - 8 -
+			  sizeof(SENSOR_REG_STRUCT) * (MAXIMUM_SENSOR_ENG_REG_NUMBER +
+						       MAXIMUM_SENSOR_CCT_REG_NUMBER)];
+} NVRAM_SENSOR_DATA_STRUCT, *PNVRAM_SENSOR_DATA_STRUCT;
 
 #define MAX_SENSOR_CAL_SIZE_KERNEL     (1024)   /* Byte */
 #define MAX_SHADING_DATA_TBL ((MAX_SENSOR_CAL_SIZE_KERNEL-8)/4)
-struct SET_SENSOR_CALIBRATION_DATA_STRUCT {
+typedef struct SET_SENSOR_CALIBRATION_DATA_STRUCT {
 	MUINT32 DataFormat;
 	MUINT32 DataSize;
 	MUINT32 ShadingData[MAX_SHADING_DATA_TBL];
-};
+} SET_SENSOR_CALIBRATION_DATA_STRUCT, *PSET_SENSOR_CALIBRATION_DATA_STRUCT;
 
-struct IMGSENSOR_GET_CONFIG_INFO_STRUCT {
+typedef struct IMGSENSOR_GET_CONFIG_INFO_STRUCT {
 	MUINT32 SensorId;
-	enum MSDK_SCENARIO_ID_ENUM ScenarioId;
-	struct ACDK_SENSOR_INFO_STRUCT *pInfo;
-	struct ACDK_SENSOR_CONFIG_STRUCT *pConfig;
-};
+	MSDK_SCENARIO_ID_ENUM ScenarioId;
+	ACDK_SENSOR_INFO_STRUCT *pInfo;
+	ACDK_SENSOR_CONFIG_STRUCT *pConfig;
+} IMGSENSOR_GET_CONFIG_INFO_STRUCT;
 
-struct ACDK_SENSOR_GETINFO_STRUCT {
-	enum MSDK_SCENARIO_ID_ENUM ScenarioId[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
-	struct ACDK_SENSOR_INFO_STRUCT *pInfo[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
-	struct ACDK_SENSOR_CONFIG_STRUCT *pConfig[
-	    KDIMGSENSOR_MAX_INVOKE_DRIVERS];
-};
+typedef struct ACDK_SENSOR_GETINFO_STRUCT {
+	MSDK_SCENARIO_ID_ENUM ScenarioId[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
+	ACDK_SENSOR_INFO_STRUCT *pInfo[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
+	ACDK_SENSOR_CONFIG_STRUCT *pConfig[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
+} ACDK_SENSOR_GETINFO_STRUCT, *PACDK_SENSOR_GETINFO_STRUCT;
 
-struct IMAGESENSOR_GETINFO_STRUCT {
+typedef struct IMAGESENSOR_GETINFO_STRUCT {
 	MUINT32 SensorId;
 	ACDK_SENSOR_INFO2_STRUCT *pInfo;
-	struct ACDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution;
-};
+	ACDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution;
+} IMAGESENSOR_GETINFO_STRUCT, *PIMAGESENSOR_GETINFO_STRUCT;
 
-struct ACDK_SENSOR_FEATURECONTROL_STRUCT {
+typedef struct ACDK_SENSOR_FEATURECONTROL_STRUCT {
 	MUINT32 InvokeCamera;
-	enum ACDK_SENSOR_FEATURE_ENUM FeatureId;
+	ACDK_SENSOR_FEATURE_ENUM FeatureId;
 	MUINT8 *pFeaturePara;
 	MUINT32 *pFeatureParaLen;
-};
+} ACDK_SENSOR_FEATURECONTROL_STRUCT, *PACDK_SENSOR_FEATURECONTROL_STRUCT;
 
-struct ACDK_SENSOR_CONTROL_STRUCT {
+typedef struct ACDK_SENSOR_CONTROL_STRUCT {
 	MUINT32 InvokeCamera;
-	enum MSDK_SCENARIO_ID_ENUM ScenarioId;
-	struct ACDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow;
-	struct ACDK_SENSOR_CONFIG_STRUCT *pSensorConfigData;
-};
+	MSDK_SCENARIO_ID_ENUM ScenarioId;
+	ACDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow;
+	ACDK_SENSOR_CONFIG_STRUCT *pSensorConfigData;
+} ACDK_SENSOR_CONTROL_STRUCT;
 
-struct ACDK_SENSOR_PRESOLUTION_STRUCT {
-	struct ACDK_SENSOR_RESOLUTION_INFO_STRUCT *pResolution[
-	    KDIMGSENSOR_MAX_INVOKE_DRIVERS];
-};
+typedef struct ACDK_SENSOR_PRESOLUTION_STRUCT {
+	ACDK_SENSOR_RESOLUTION_INFO_STRUCT * pResolution[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
+} ACDK_SENSOR_PRESOLUTION_STRUCT;
 
-struct REGVAL_LIST_STRUCT {
+typedef struct REGVAL_LIST_STRUCT {
 	MUINT32 reg_addr;
 	MUINT32 value;
 	MUINT32 bytes;
-};
+} REGVAL_LIST_STRUCT;
 
 #define KDIMGSENSOR_REGVAL_LIST_MAX_NUM 256
 
-struct IMGSENSOR_FORMAT_STRUCT {
+typedef struct IMGSENSOR_FORMAT_STRUCT {
 	MUINT8 *desc;
 	MUINT32 pixelformat;
 	/* REGVAL_LIST_STRUCT regs[KDIMGSENSOR_REGVAL_LIST_MAX_NUM]; */
 	int (*pfInitCfg)(void);
-};
+} IMGSENSOR_FORMAT_STRUCT;
 
-struct stImgSensorFormat {
-	struct IMGSENSOR_FORMAT_STRUCT format;
-	MUINT32 u4InClk;    /* Common part  */
-	MUINT32 u4OutClk;   /* Common part  */
+typedef struct stImgSensorFormat {
+	IMGSENSOR_FORMAT_STRUCT format;
+	MUINT32 u4InClk;    /* Common part                                     //hard coded */
+	MUINT32 u4OutClk;   /* Common part                                    // */
 	MUINT32 u4TotalPixelPerLine;    /* By modes */
 	MUINT32 u4TotalLinesPerFrame;   /* By modes and frame rate setting */
 	MUINT32 u4ActualWidth;  /* By modes */
@@ -1068,7 +1108,7 @@ struct stImgSensorFormat {
 	MUINT32 u4XEnd;
 	MUINT32 u4YStart;
 	MUINT32 u4YEnd;
-};
+} stImgSensorFormat;
 
 #define ISP_CLK_LEVEL_CNT 10
 struct IMAGESENSOR_GET_SUPPORTED_ISP_CLK {
@@ -1078,43 +1118,43 @@ struct IMAGESENSOR_GET_SUPPORTED_ISP_CLK {
 
 #ifdef CONFIG_COMPAT
 
-struct COMPAT_IMGSENSOR_GET_CONFIG_INFO_STRUCT {
+typedef struct COMPAT_IMGSENSOR_GET_CONFIG_INFO_STRUCT {
 	MUINT32 SensorId;
-	enum MSDK_SCENARIO_ID_ENUM ScenarioId;
+	MSDK_SCENARIO_ID_ENUM ScenarioId;
 	compat_uptr_t pInfo;
 	compat_uptr_t pConfig;
-};
+} COMPAT_IMGSENSOR_GET_CONFIG_INFO_STRUCT;
 
 /* Redifne structures for compat_ioctl */
-struct COMPAT_ACDK_SENSOR_GETINFO_STRUCT {
-	enum MSDK_SCENARIO_ID_ENUM ScenarioId[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
+typedef struct COMPAT_ACDK_SENSOR_GETINFO_STRUCT {
+	MSDK_SCENARIO_ID_ENUM ScenarioId[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
 	compat_uptr_t pInfo[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
 	compat_uptr_t pConfig[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
-};
+} COMPAT_ACDK_SENSOR_GETINFO_STRUCT;
 
-struct COMPAT_IMAGESENSOR_GETINFO_STRUCT {
+typedef struct COMPAT_IMAGESENSOR_GETINFO_STRUCT {
 	MUINT32 SensorId;
 	compat_uptr_t pInfo;
 	compat_uptr_t pSensorResolution;
-};
+} COMPAT_IMAGESENSOR_GETINFO_STRUCT;
 
-struct COMPAT_ACDK_SENSOR_FEATURECONTROL_STRUCT {
+typedef struct COMPAT_ACDK_SENSOR_FEATURECONTROL_STRUCT {
 	MUINT32 InvokeCamera;
-	enum ACDK_SENSOR_FEATURE_ENUM FeatureId;
+	ACDK_SENSOR_FEATURE_ENUM FeatureId;
 	compat_uptr_t pFeaturePara;
 	compat_uptr_t pFeatureParaLen;
-};
+} COMPAT_ACDK_SENSOR_FEATURECONTROL_STRUCT;
 
-struct COMPAT_ACDK_SENSOR_CONTROL_STRUCT {
+typedef struct COMPAT_ACDK_SENSOR_CONTROL_STRUCT {
 	MUINT32 InvokeCamera;
-	enum MSDK_SCENARIO_ID_ENUM ScenarioId;
+	MSDK_SCENARIO_ID_ENUM ScenarioId;
 	compat_uptr_t pImageWindow;
 	compat_uptr_t pSensorConfigData;
-};
+} COMPAT_ACDK_SENSOR_CONTROL_STRUCT;
 
-struct COMPAT_ACDK_SENSOR_PRESOLUTION_STRUCT {
+typedef struct COMPAT_ACDK_SENSOR_PRESOLUTION_STRUCT {
 	compat_uptr_t pResolution[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
-};
+} COMPAT_ACDK_SENSOR_PRESOLUTION_STRUCT;
 
 #endif
 
@@ -1129,34 +1169,17 @@ struct COMPAT_ACDK_SENSOR_PRESOLUTION_STRUCT {
 /* #define kal_uint8 u8 */
 
 /* #define MSDK_SCENARIO_ID_ENUM               ACDK_SCENARIO_ID_ENUM */
-#define MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT \
-		struct ACDK_SENSOR_EXPOSURE_WINDOW_STRUCT
-#define MSDK_SENSOR_CONFIG_STRUCT \
-		struct ACDK_SENSOR_CONFIG_STRUCT
+#define MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT      ACDK_SENSOR_EXPOSURE_WINDOW_STRUCT
+#define MSDK_SENSOR_CONFIG_STRUCT               ACDK_SENSOR_CONFIG_STRUCT
 
-#define MSDK_SENSOR_FEATURE_ENUM \
-		enum ACDK_SENSOR_FEATURE_ENUM
-
-#define MSDK_SENSOR_REG_INFO_STRUCT \
-		struct ACDK_SENSOR_REG_INFO_STRUCT
-
-#define MSDK_SENSOR_GROUP_INFO_STRUCT \
-		struct ACDK_SENSOR_GROUP_INFO_STRUCT
-
-#define MSDK_SENSOR_ITEM_INFO_STRUCT \
-		struct ACDK_SENSOR_ITEM_INFO_STRUCT
-
-#define MSDK_SENSOR_ENG_INFO_STRUCT \
-		struct ACDK_SENSOR_ENG_INFO_STRUCT
-
-#define MSDK_SENSOR_INFO_STRUCT \
-		struct ACDK_SENSOR_INFO_STRUCT
-
-#define MSDK_SENSOR_RESOLUTION_INFO_STRUCT \
-		struct ACDK_SENSOR_RESOLUTION_INFO_STRUCT
-
-#define MSDK_SENSOR_DBG_IMGSENSOR_INFO_STRUCT \
-		struct ACDK_SENSOR_DBG_IMGSENSOR_STRUCT
+#define MSDK_SENSOR_FEATURE_ENUM                ACDK_SENSOR_FEATURE_ENUM
+#define MSDK_SENSOR_REG_INFO_STRUCT             ACDK_SENSOR_REG_INFO_STRUCT
+#define MSDK_SENSOR_GROUP_INFO_STRUCT           ACDK_SENSOR_GROUP_INFO_STRUCT
+#define MSDK_SENSOR_ITEM_INFO_STRUCT            ACDK_SENSOR_ITEM_INFO_STRUCT
+#define MSDK_SENSOR_ENG_INFO_STRUCT             ACDK_SENSOR_ENG_INFO_STRUCT
+#define MSDK_SENSOR_INFO_STRUCT                 ACDK_SENSOR_INFO_STRUCT
+#define MSDK_SENSOR_RESOLUTION_INFO_STRUCT      ACDK_SENSOR_RESOLUTION_INFO_STRUCT
+#define MSDK_SENSOR_DBG_IMGSENSOR_INFO_STRUCT   ACDK_SENSOR_DBG_IMGSENSOR_STRUCT
 
 /* MSDK_SCENARIO_ID_ENUM => ACDK_SCENARIO_ID_ENUM
  * #define MSDK_SCENARIO_ID_CAMERA_PREVIEW  \
@@ -1178,87 +1201,67 @@ struct COMPAT_ACDK_SENSOR_PRESOLUTION_STRUCT {
  */
 /************************************************************************
  *
- ************************************************************************/
-struct MULTI_SENSOR_FUNCTION_STRUCT {
+ ********************************************************************************/
+typedef struct MULTI_SENSOR_FUNCTION_STRUCT {
 	MUINT32 (*SensorOpen)(void);
-	MUINT32 (*SensorGetInfo)(MUINT32 *pScenarioId[2],
-	    MSDK_SENSOR_INFO_STRUCT * pSensorInfo[2],
-	    MSDK_SENSOR_CONFIG_STRUCT * pSensorConfigData[2]);
-
-	MUINT32 (*SensorGetResolution)(
-	    MSDK_SENSOR_RESOLUTION_INFO_STRUCT * pSensorResolution[2]);
-
-	MUINT32 (*SensorFeatureControl)(
-	    enum CAMERA_DUAL_CAMERA_SENSOR_ENUM InvokeCamera,
-	    MSDK_SENSOR_FEATURE_ENUM FeatureId, MUINT8 *pFeaturePara,
-	    MUINT32 *pFeatureParaLen);
-
-	MUINT32 (*SensorControl)(enum MSDK_SCENARIO_ID_ENUM ScenarioId,
-	    MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow,
-	    MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
-
+	MUINT32 (*SensorGetInfo)(MUINT32 *pScenarioId[2], MSDK_SENSOR_INFO_STRUCT * pSensorInfo[2],
+			MSDK_SENSOR_CONFIG_STRUCT * pSensorConfigData[2]);
+	MUINT32 (*SensorGetResolution)(MSDK_SENSOR_RESOLUTION_INFO_STRUCT * pSensorResolution[2]);
+	MUINT32 (*SensorFeatureControl)(CAMERA_DUAL_CAMERA_SENSOR_ENUM InvokeCamera,
+			MSDK_SENSOR_FEATURE_ENUM FeatureId, MUINT8 *pFeaturePara,
+			MUINT32 *pFeatureParaLen);
+	MUINT32 (*SensorControl)(MSDK_SCENARIO_ID_ENUM ScenarioId,
+			MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow,
+			MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
 	MUINT32 (*SensorClose)(void);
-};
+} MULTI_SENSOR_FUNCTION_STRUCT, *PMULTI_SENSOR_FUNCTION_STRUCT;
 
-struct MULTI_SENSOR_FUNCTION_STRUCT2 {
+typedef struct MULTI_SENSOR_FUNCTION_STRUCT2 {
 	MUINT32 (*SensorOpen)(void);
-	MUINT32 (*SensorGetInfo)(MUINT32 *pScenarioId[2],
-	    MSDK_SENSOR_INFO_STRUCT * pSensorInfo[2],
-	    MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData[2]);
-
-	MUINT32 (*SensorGetResolution)(
-	    MSDK_SENSOR_RESOLUTION_INFO_STRUCT * pSensorResolution[2]);
-
-	MUINT32 (*SensorFeatureControl)(
-	    enum CAMERA_DUAL_CAMERA_SENSOR_ENUM InvokeCamera,
-	    MSDK_SENSOR_FEATURE_ENUM FeatureId, MUINT8 *pFeaturePara,
-	    MUINT32 *pFeatureParaLen);
-
-	MUINT32 (*SensorControl)(
-	    enum CAMERA_DUAL_CAMERA_SENSOR_ENUM InvokeCamera,
-	    enum MSDK_SCENARIO_ID_ENUM ScenarioId,
-	    MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow,
-	    MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
-
+	MUINT32 (*SensorGetInfo)(MUINT32 *pScenarioId[2], MSDK_SENSOR_INFO_STRUCT * pSensorInfo[2],
+			MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData[2]);
+	MUINT32 (*SensorGetResolution)(MSDK_SENSOR_RESOLUTION_INFO_STRUCT * pSensorResolution[2]);
+	MUINT32 (*SensorFeatureControl)(CAMERA_DUAL_CAMERA_SENSOR_ENUM InvokeCamera,
+			MSDK_SENSOR_FEATURE_ENUM FeatureId, MUINT8 *pFeaturePara,
+			MUINT32 *pFeatureParaLen);
+	MUINT32 (*SensorControl)(CAMERA_DUAL_CAMERA_SENSOR_ENUM InvokeCamera,
+			MSDK_SCENARIO_ID_ENUM ScenarioId,
+			MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow,
+			MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
 	MUINT32 (*SensorClose)(void);
-};
+} MULTI_SENSOR_FUNCTION_STRUCT2, *PMULTI_SENSOR_FUNCTION_STRUCT2;
 
-struct SENSOR_FUNCTION_STRUCT {
+typedef struct SENSOR_FUNCTION_STRUCT {
 	MUINT32 (*SensorOpen)(void);
-	MUINT32 (*SensorGetInfo)(enum MSDK_SCENARIO_ID_ENUM ScenarioId,
-	    MSDK_SENSOR_INFO_STRUCT *pSensorInfo,
-	    MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
-
-	MUINT32 (*SensorGetResolution)(
-	    MSDK_SENSOR_RESOLUTION_INFO_STRUCT * pSensorResolution);
-
-	MUINT32 (*SensorFeatureControl)(MSDK_SENSOR_FEATURE_ENUM FeatureId,
-	    MUINT8 *pFeaturePara,
-	    MUINT32 *pFeatureParaLen);
-
-	MUINT32 (*SensorControl)(enum MSDK_SCENARIO_ID_ENUM ScenarioId,
-	    MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow,
-	    MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
-
+	MUINT32 (*SensorGetInfo)(MSDK_SCENARIO_ID_ENUM ScenarioId,
+			MSDK_SENSOR_INFO_STRUCT *pSensorInfo,
+			MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
+	MUINT32 (*SensorGetResolution)(MSDK_SENSOR_RESOLUTION_INFO_STRUCT *pSensorResolution);
+	MUINT32 (*SensorFeatureControl)(MSDK_SENSOR_FEATURE_ENUM FeatureId, MUINT8 *pFeaturePara,
+			MUINT32 *pFeatureParaLen);
+	MUINT32 (*SensorControl)(MSDK_SCENARIO_ID_ENUM ScenarioId,
+			MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *pImageWindow,
+			MSDK_SENSOR_CONFIG_STRUCT *pSensorConfigData);
 	MUINT32 (*SensorClose)(void);
 #if 1 /* isp suspend resume patch */
-	enum MSDK_SCENARIO_ID_ENUM ScenarioId;
+	MSDK_SCENARIO_ID_ENUM ScenarioId;
 	MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT imageWindow;
 	MSDK_SENSOR_CONFIG_STRUCT sensorConfigData;
-	enum SENSOR_STATE_ENUM sensorState;
+	SENSOR_STATE_ENUM sensorState;
 #endif
 	MUINT8  arch;
 	void   *psensor_inst; /* IMGSENSOR_SENSOR_INST */
-};
+} SENSOR_FUNCTION_STRUCT, *PSENSOR_FUNCTION_STRUCT;
 
-struct ACDK_KD_SENSOR_INIT_FUNCTION_STRUCT {
+
+typedef struct ACDK_KD_SENSOR_INIT_FUNCTION_STRUCT {
 	MUINT32 SensorId;
 	MUINT8 drvname[32];
-	MUINT32 (*SensorInit)(struct SENSOR_FUNCTION_STRUCT **pfFunc);
-};
+	MUINT32(*SensorInit)(PSENSOR_FUNCTION_STRUCT *pfFunc);
+} ACDK_KD_SENSOR_INIT_FUNCTION_STRUCT, *PACDK_KD_SENSOR_INIT_FUNCTION_STRUCT;
 
 /* For sensor synchronize the exposure time / sensor gain and isp gain. */
-struct ACDK_KD_SENSOR_SYNC_STRUCT {
+typedef struct ACDK_KD_SENSOR_SYNC_STRUCT {
 	MUINT16 u2ISPNewRGain;
 	MUINT16 u2ISPNewGrGain;
 	MUINT16 u2ISPNewGbGain;
@@ -1269,68 +1272,61 @@ struct ACDK_KD_SENSOR_SYNC_STRUCT {
 	MUINT8 uSensorGainDelayFrame;
 	MUINT8 uISPGainDelayFrame;
 	MUINT8 uDummy;
-};
+} ACDK_KD_SENSOR_SYNC_STRUCT, *PACDK_KD_SENSOR_SYNC_STRUCT;
 
 
-struct SENSOR_AE_REF_STRUCT {
+typedef struct SENSOR_AE_REF_STRUCT {
 	MUINT16 AeRefLV05Shutter;   /* Sensor AE Shutter under Lv05 */
 	MUINT16 AeRefLV13Shutter;   /* Sensor AE Shutter under Lv13 */
 	MUINT16 AeRefLV05Gain;  /* Sensor AE Gain under Lv05 */
 	MUINT16 AeRefLV13Gain;  /* Sensor AE Gain under Lv13 */
-};
+} SENSOR_AE_REF_STRUCT, *PSENSOR_AE_REF_STRUCT;
 
 
-struct SENSOR_AWB_GAIN_REF_STRUCT {
+typedef struct SENSOR_AWB_GAIN_REF_STRUCT {
 	MUINT16 AwbRefD65Rgain; /* Sensor AWB R Gain under D65 */
 	MUINT16 AwbRefD65Bgain; /* Sensor AWB B Gain under D65 */
 	MUINT16 AwbRefCWFRgain; /* Sensor AWB R Gain under CWF */
 	MUINT16 AwbRefCWFBgain; /* Sensor AWB B Gain under CWF */
-};
+} SENSOR_AWB_GAIN_REF_STRUCT, *PSENSOR_AWB_GAIN_REF_STRUCT;
 
 
-struct SENSOR_AE_AWB_REF_STRUCT {
-
-	/* AE Ref information for ASD usage */
-	struct SENSOR_AE_REF_STRUCT SensorAERef;
-
-	/* AWB Gain Ref information for ASD usage */
-	struct SENSOR_AWB_GAIN_REF_STRUCT SensorAwbGainRef;
+typedef struct SENSOR_AE_AWB_REF_STRUCT {
+	SENSOR_AE_REF_STRUCT SensorAERef;   /* AE Ref information for ASD usage */
+	SENSOR_AWB_GAIN_REF_STRUCT SensorAwbGainRef;    /* AWB Gain Ref information for ASD usage */
 	MUINT32 SensorLV05LV13EVRef;    /* EV calculate  for ASD usage */
-};
+} SENSOR_AE_AWB_REF_STRUCT, *PSENSOR_AE_AWB_REF_STRUCT;
 
 
 
-struct SENSOR_AE_CUR_STRUCT {
+typedef struct SENSOR_AE_CUR_STRUCT {
 	MUINT16 AeCurShutter;   /* Current Sensor AE Shutter */
 	MUINT16 AeCurGain;  /* Current Sensor AE Gain */
-};
+} SENSOR_AE_CUR_STRUCT, *PSENSOR_AE_CUR_STRUCT;
 
-struct SENSOR_AWB_GAIN_CUR_STRUCT {
+
+typedef struct SENSOR_AWB_GAIN_CUR_STRUCT {
 	MUINT16 AwbCurRgain;    /* Current Sensor AWB R Gain */
 	MUINT16 AwbCurBgain;    /* Current Sensor AWB R Gain */
-};
+} SENSOR_AWB_GAIN_CUR_STRUCT, *PSENSOR_AWB_GAIN_CUR_STRUCT;
 
 
-struct SENSOR_AE_AWB_CUR_STRUCT {
-
-	/* AE Current information for ASD usage */
-	struct SENSOR_AE_CUR_STRUCT SensorAECur;
-
-	/* AWB Gain Current information for ASD usage */
-	struct SENSOR_AWB_GAIN_CUR_STRUCT SensorAwbGainCur;
-};
+typedef struct SENSOR_AE_AWB_CUR_STRUCT {
+	SENSOR_AE_CUR_STRUCT SensorAECur;   /* AE Current information for ASD usage */
+	SENSOR_AWB_GAIN_CUR_STRUCT SensorAwbGainCur;    /* AWB Gain Current information for ASD usage */
+} SENSOR_AE_AWB_CUR_STRUCT, *PSENSOR_AE_AWB_CUR_STRUCT;
 
 
-struct SENSOR_EXIF_INFO_STRUCT {
+typedef struct SENSOR_EXIF_INFO_STRUCT {
 	MUINT32 FNumber;
 	MUINT32 AEISOSpeed;
 	MUINT32 AWBMode;
 	MUINT32 CapExposureTime;
 	MUINT32 FlashLightTimeus;
 	MUINT32 RealISOValue;
-};
+} SENSOR_EXIF_INFO_STRUCT, *PSENSOR_EXIF_INFO_STRUCT;
 
-struct SENSOR_DELAY_INFO_STRUCT {
+typedef struct SENSOR_DELAY_INFO_STRUCT {
 	MUINT32 InitDelay;
 	MUINT32 EffectDelay;
 	MUINT32 AwbDelay;
@@ -1339,43 +1335,42 @@ struct SENSOR_DELAY_INFO_STRUCT {
 	MUINT32 SatDelay;
 	MUINT32 BrightDelay;
 	MUINT32 ContrastDelay;
-};
+} SENSOR_DELAY_INFO_STRUCT, *PSENSOR_DELAY_INFO_STRUCT;
 
-struct SENSOR_FLASHLIGHT_AE_INFO_STRUCT {
+typedef struct SENSOR_FLASHLIGHT_AE_INFO_STRUCT {
 	MUINT32 u4Fno;
 	MUINT32 Exposuretime;
 	MUINT32 Gain;
 	MUINT32 GAIN_BASE;
-};
+} SENSOR_FLASHLIGHT_AE_INFO_STRUCT, *PSENSOR_FLASHLIGHT_AE_INFO_STRUCT;
 
 struct IMGSENSOR_SENSOR_LIST {
 	MUINT32 id;
 	MUINT8 name[32];
-	MUINT32 (*init)(struct SENSOR_FUNCTION_STRUCT **pfFunc);
+	MUINT32 (*init)(PSENSOR_FUNCTION_STRUCT *pfFunc);
 };
+
 /* multisensor driver */
 
-struct SENSOR_DRIVER_INDEX_STRUCT {
-
-	/* max 2 driver sumultaneously */
-	MUINT32 drvIndex[KDIMGSENSOR_MAX_INVOKE_DRIVERS];
-};
+typedef struct SENSOR_DRIVER_INDEX_STRUCT {
+	MUINT32 drvIndex[KDIMGSENSOR_MAX_INVOKE_DRIVERS];   /* max 2 driver sumultaneously */
+} SENSOR_DRIVER_INDEX_STRUCT, *PSENSOR_DRIVER_INDEX_STRUCT;
 
 /* hardcode by GPIO module, should be sync with.(cust_gpio_usage.h) */
 #define GPIO_CAMERA_INVALID 0xFF
 /*  */
-enum IMGSENSOR_SOCKET_POSITION_ENUM {
+typedef enum IMGSENSOR_SOCKET_POSITION_ENUM {
 	IMGSENSOR_SOCKET_POS_NONE = 0xFFFFFFFF,
 	IMGSENSOR_SOCKET_POS_RIGHT = 0x1,
 	IMGSENSOR_SOCKET_POS_LEFT = 0x2,
-};
+} IMGSENSOR_SOCKET_POSITION_ENUM;
 /*  */
-enum IMGSENSOR_SET_I2C_ID_ENUM {
+typedef enum IMGSENSOR_SET_I2C_ID_ENUM {
 	IMGSENSOR_SET_I2C_ID_STATE = 0x00,
 	IMGSENSOR_SET_I2C_ID_FORCE
-};
+} IMGSENSOR_SET_I2C_ID_ENUM;
 
-enum ACDK_SENSOR_3A_LOCK_ENUM {
+typedef enum ACDK_SENSOR_3A_LOCK_ENUM {
 	SENSOR_3A_AE_LOCK = 0,
 	SENSOR_3A_AE_UNLOCK,
 	SENSOR_3A_AWB_LOCK,
@@ -1387,22 +1382,23 @@ enum ACDK_SENSOR_3A_LOCK_ENUM {
 	SENSOR_3A_AF_INFINITY,
 	/* SENSOR_3A_AF_LOCK, */
 	/* SENSOR_3A_AF_UNLOCK, */
-};
+} ACDK_SENSOR_3A_LOCK_ENUM;
 
 
-struct ACDK_SENSOR_JPEG_OUTPUT_PARA {
+typedef struct ACDK_SENSOR_JPEG_OUTPUT_PARA {
 	MUINT32 tgtWidth;
 	MUINT32 tgtHeight;
 	MUINT32 quality;
-};
+
+} ACDK_SENSOR_JPEG_OUTPUT_PARA;
 
 
 /* for JPEG Sensor Info */
-struct ACDK_SENSOR_JPEG_INFO {
+typedef struct ACDK_SENSOR_JPEG_INFO {
 	MUINT32 u4FileSize; /* For input sensor width */
 	MUINT32 u4SrcW;     /* For input sensor width */
 	MUINT32 u4SrcH;     /* For input sensor height */
-};
+} ACDK_SENSOR_JPEG_INFO;
 
 enum {
 	FOUR_CELL_CAL_TYPE_GAIN_TBL    =  0x0,

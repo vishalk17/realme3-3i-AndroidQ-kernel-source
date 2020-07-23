@@ -849,10 +849,11 @@ static int mt6768_sram_size_get(struct snd_kcontrol *kcontrol,
 {
 	struct snd_soc_component *cmpnt = snd_soc_kcontrol_component(kcontrol);
 	struct mtk_base_afe *afe = snd_soc_component_get_drvdata(cmpnt);
-	struct mtk_audio_sram *sram = afe->sram;
 
 	ucontrol->value.integer.value[0] =
-		mtk_audio_sram_get_size(sram, sram->prefer_mode);
+		mtk_audio_sram_get_size(afe->sram, MTK_AUDIO_SRAM_NORMAL_MODE);
+	ucontrol->value.integer.value[1] =
+		mtk_audio_sram_get_size(afe->sram, MTK_AUDIO_SRAM_COMPACT_MODE);
 
 	return 0;
 }
@@ -1211,7 +1212,7 @@ static const struct snd_kcontrol_new mt6768_pcm_kcontrols[] = {
 		       mt6768_primary_scene_get, mt6768_primary_scene_set),
 	SOC_SINGLE_EXT("voip_rx_scenario", SND_SOC_NOPM, 0, 0x1, 0,
 		       mt6768_voip_scene_get, mt6768_voip_scene_set),
-	SOC_SINGLE_EXT("sram_size", SND_SOC_NOPM, 0, 0xffffffff, 0,
+	SOC_DOUBLE_EXT("sram_size", SND_SOC_NOPM, 0, 1, 0xffffffff, 0,
 		       mt6768_sram_size_get, NULL),
 #if defined(CONFIG_MTK_VOW_BARGE_IN_SUPPORT)
 	SOC_SINGLE_EXT("vow_barge_in_irq_id", SND_SOC_NOPM, 0, 0x3ffff, 0,
@@ -3277,6 +3278,11 @@ static int mt6768_afe_pcm_dev_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	platform_set_drvdata(pdev, afe);
 	mt6768_set_local_afe(afe);
+
+#ifdef ODM_HQ_EDIT
+/*sunjingtao@ODM.HQ.Multimedia.Audio 2020/03/04 modified for speaker bringup*/
+	mt6768_machine_driver_set_g_afe(afe);
+#endif /* ODM_HQ_EDIT */
 
 	afe->platform_priv = devm_kzalloc(&pdev->dev, sizeof(*afe_priv),
 					  GFP_KERNEL);

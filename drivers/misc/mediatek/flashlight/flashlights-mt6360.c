@@ -92,13 +92,31 @@ struct mt6360_platform_data {
 /******************************************************************************
  * mt6360 operations
  *****************************************************************************/
+#ifdef ODM_HQ_EDIT
+/* Lijian@ODM.Camera.Drv 20190827 for flashlight bringup */
+static const int mt6360_current[MT6360_LEVEL_NUM] = {
+	  25,   50,  75, 100, 125, 150, 175,  200,  225,  250,
+	 275,  300, 325, 350, 375, 400, 450,  500,  550,  600,
+	 650,  700, 750, 800, 850, 900, 950, 1000
+};
+static const unsigned char mt6360_torch_level[MT6360_LEVEL_TORCH] = {
+	0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E, 0x10, 0x12,
+	0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E
+};
+
+/* 0x00~0x74 6.25mA/step 0x75~0xB1 12.5mA/step */
+static const unsigned char mt6360_strobe_level[MT6360_LEVEL_FLASH] = {
+	0x00, 0x04, 0x08, 0x0C, 0x10, 0x14, 0x18, 0x1C, 0x20, 0x24,
+	0x28, 0x2C, 0x30, 0x34, 0x38, 0x3C, 0x44, 0x4C, 0x54, 0x5C,
+	0x64, 0x6C, 0x74, 0x78, 0x7C, 0x80, 0x84, 0x88
+};
+#else
 static const int mt6360_current[MT6360_LEVEL_NUM] = {
 	  25,   50,  75, 100, 125, 150, 175,  200,  225,  250,
 	 275,  300, 325, 350, 375, 400, 450,  500,  550,  600,
 	 650,  700, 750, 800, 850, 900, 950, 1000, 1050, 1100,
 	1150, 1200
 };
-
 static const unsigned char mt6360_torch_level[MT6360_LEVEL_TORCH] = {
 	0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E, 0x10, 0x12,
 	0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E
@@ -111,6 +129,7 @@ static const unsigned char mt6360_strobe_level[MT6360_LEVEL_FLASH] = {
 	0x64, 0x6C, 0x74, 0x78, 0x7C, 0x80, 0x84, 0x88, 0x8C, 0x90,
 	0x94, 0x98
 };
+#endif
 
 static int mt6360_decouple_mode;
 static int mt6360_en_ch1;

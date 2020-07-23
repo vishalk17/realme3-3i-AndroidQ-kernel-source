@@ -62,8 +62,10 @@
 	register_setting = <&msdc1_register_setting_default>;
 
 	host_function = /bits/ 8 <MSDC_SD>;
-
-	cd_level = /bits/ 8 <MSDC_CD_LOW>;
+	//#ifdef ODM_HQ_EDIT
+	//sunjingtao@ODM.BSP.System  2019/8/28 add for SD card
+	cd_level = /bits/ 8 <MSDC_CD_HIGH>;
+	//#endif // ODM_HQ_EDIT
 	cd-gpios = <&pio 8 0>;
 
 	status = "okay";

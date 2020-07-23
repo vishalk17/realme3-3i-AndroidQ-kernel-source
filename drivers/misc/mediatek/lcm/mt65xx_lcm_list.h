@@ -16,6 +16,58 @@
 
 #include <lcm_drv.h>
 
+#ifdef VENDOR_EDIT
+/* zhoujian-xinzhi@PSW.MM.Display.LCD.Machine, 2019/09/17, Add for porting lcd driver */
+extern struct LCM_DRIVER oppo17321_boe_td4310_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo17321_dsjm_td4310_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo17321_tianma_td4310_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo18311_depute_nt36672_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo18311_dsjm_himax83112a_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo18311_tianma_nt36672_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo18311_truly_td4320_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo19531_samsung_ams641rw01_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo_auo_nt36672_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo_dpt_jdi_hx83112a_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo_dpt_jdi_nt36672_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo_dpt_jdi_td4330_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo_dsjm_nt36672_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo_himax83112b_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo_jdi_nt36672_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo_jdi_td4310_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo_jdi_td4330_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo_samsung_ams628nw_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo_samsung_ams628nw_lsi_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo_tianma_nt36672_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo_truly_nt36672_auo_1080p_dsi_vdo_lcm_drv;
+#endif /*VENDOR_EDIT*/
+
+/* zhoujian-xinzhi@PSW.MM.Display.LCD.Machine, 2019/09/3, Add for porting 18561 lcd driver */
+#ifdef VENDOR_EDIT
+extern struct LCM_DRIVER oppo18561_djn_jdi_himax83112b_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo18561_dpt_jdi_td4330_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo18561_dsjm_jdi_himax83112a_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo18561_dsjm_jdi_td4330_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo18561_tianma_himax83112a_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo18561_tianma_td4330_1080p_dsi_cmd_lcm_drv;
+#endif /*VENDOR_EDIT*/
+/* zhoujian-xinzhi@PSW.MM.Display.LCD.Machine, 2019/08/30, Add for porting 18531 lcd driver */
+#ifdef VENDOR_EDIT
+extern struct LCM_DRIVER oppo18531_dpt_jdi_himax83112a_2_1080p_dsi_vdo_lcm_drv;
+extern struct LCM_DRIVER oppo18531_dsjm_jdi_himax83112b_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo18531_tm_nt36670a_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo18531_tm_himax83112a_2_1080p_dsi_vdo_lcm_drv;
+#endif /*VENDOR_EDIT*/
+extern struct LCM_DRIVER oppo18531_dpt_jdi_td4330_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo18531_dsjm_jdi_td4330_1080p_dsi_cmd_lcm_drv;
+extern struct LCM_DRIVER oppo18531_tianma_td4330_1080p_dsi_cmd_lcm_drv;
+#ifdef ODM_HQ_EDIT
+extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_tianma_zal1878_lcm_drv; // Add for Nemo
+extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_jdi_zal1878_lcm_drv; // Add for Nemo
+extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_boe_t0_zal1878_lcm_drv; // Add for Nemo
+extern struct LCM_DRIVER hx83112a_fhdp_dsi_vdo_jdi_zal1878_lcm_drv; // Add for Nemo
+extern struct LCM_DRIVER hx83112a_fhdp_dsi_vdo_jdi_t0_zal1878_lcm_drv; // Add for Nemo
+extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_evb2_zal1878_lcm_drv; // Add for Nemo
+#endif //ODM_HQ_EDIT
 extern struct LCM_DRIVER otm1282a_hd720_dsi_vdo_60hz_lcm_drv;
 extern struct LCM_DRIVER otm1282a_hd720_dsi_vdo_lcm_drv;
 extern struct LCM_DRIVER nt35595_fhd_dsi_cmd_truly_8163_lcm_drv;
@@ -308,7 +360,6 @@ extern struct LCM_DRIVER hx83112b_fhdp_dsi_cmd_auo_rt5081_lcm_drv;
 extern struct LCM_DRIVER hx83112b_fhdp_dsi_vdo_auo_rt5081_lcm_drv;
 extern struct LCM_DRIVER hx83112b_fhdp_dsi_cmd_auo_rt5081_fhd_lcm_drv;
 extern struct LCM_DRIVER hx83112b_fhdp_dsi_cmd_auo_rt5081_hdp_lcm_drv;
-extern struct LCM_DRIVER hx83112b_fhdp_dsi_cmd_auo_rt5081_hdp_1560_lcm_drv;
 extern struct LCM_DRIVER hx83112b_fhdp_dsi_vdo_auo_rt5081_hdp_lcm_drv;
 /*6785  hx cmd*/
 extern struct LCM_DRIVER hx83112b_fhdp_dsi_cmd_auo_rt4801_lcm_drv;
@@ -332,13 +383,31 @@ extern struct LCM_DRIVER ft8719_fhdp_dsi_vdo_auo_lm36273_lcm_drv;
 extern struct LCM_DRIVER sofeg01_fhdplus_dsi_cmd_samsung_lcm_drv;
 extern struct LCM_DRIVER nt36672a_fhdp_dsi_vdo_auo_cphy_lcm_drv;
 extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_auo_cphy_lcm_drv;
-extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_lcm_drv;
+extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_jdi_lcm_drv;
+extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_jdi_hfp_lcm_drv;
+extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_tianma_lcm_drv;
+extern struct LCM_DRIVER nt36672c_fhdp_dsi_vdo_auo_cphy_90hz_tianma_hfp_lcm_drv;
 extern struct LCM_DRIVER otm1287_wxga_dsi_vdo_auo_guoxian_lcm_drv;
 extern struct LCM_DRIVER nt35532_fhd_dsi_vdo_sharp_lcm_drv;
 extern struct LCM_DRIVER otm1901a_fhd_dsi_vdo_tpv_lcm_drv;
 extern struct LCM_DRIVER r63350a_fhd_dsi_vdo_truly_lcm_drv;
 extern struct LCM_DRIVER td4320_fhdp_dsi_vdo_auo_rt5081_lcm_drv;
 extern struct LCM_DRIVER nt51021h_wuxga_vdo_oncell_boe_lcm_drv;
+
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver, begin. */
+#ifdef CONFIG_MACH_MT6771
+extern struct LCM_DRIVER nt36525_hd_dsi_vdo_dj_boe_zal1810_lcm_drv;    //HQ added for ZAL1810
+extern struct LCM_DRIVER ili9881_hd_dsi_vdo_txd_csot_zal1810_lcm_drv;    //HQ added for ZAL1810
+extern struct LCM_DRIVER ili9881_hd_dsi_vdo_dj_boe_zal1810_lcm_drv;    //HQ added for ZAL1810
+extern struct LCM_DRIVER ili9881_hd_dsi_vdo_qc_inx_zal1810_lcm_drv;    //HQ added for ZAL1810
+#endif
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver, end. */
+
+#ifdef ODM_HQ_EDIT
+/* Benshan.Cheng@ODM.BSP.Tp 2020/02/17, modify for euler LCD driver */
+extern struct LCM_DRIVER ili9881h_hdp_dsi_vdo_boe_zal1851_lcm_drv; // Add for Euler
+extern struct LCM_DRIVER nt36525b_hdp_dsi_vdo_inx_zal1851_lcm_drv; // Add for Euler
+#endif //ODM_HQ_EDIT
 
 #ifdef BUILD_LK
 extern void mdelay(unsigned long msec);

@@ -56,6 +56,18 @@
 #define MAX_EXCEPTION_FRAME	16
 #define PRINTK_BUFFER_SIZE	512
 
+#ifdef VENDOR_EDIT
+//Liang.Zhang@PSW.TECH.BOOTUP, 2019/01/22, Add for monitor kernel error
+extern int hwt_happened;
+extern void deal_fatal_err(void);
+#endif  // VENDOR_EDIT
+
+#ifdef VENDOR_EDIT
+//Zhang Jiashu@PSW.AD.Performance,2019/10/03,Add for flushing device cache before goto dump mode!
+extern bool is_triggering_hwt;
+extern void flush_cache_on_panic(void);
+#endif  /*VENDOR_EDIT*/
+
 /* AEE_MTK_CPU_NUMS may not eaqual to real cpu numbers,
  * alloc buffer at initialization
  */
@@ -257,6 +269,25 @@ void aee_wdt_atf_info(unsigned int cpu, struct pt_regs *regs)
 	int res = 0;
 	struct wd_api *wd_api = NULL;
 #endif
+
+#ifdef VENDOR_EDIT
+//Zhang Jiashu@PSW.AD.Performance,2019/10/03,Add for flushing device cache before goto dump mode!
+    if(!is_triggering_hwt)
+    {
+        is_triggering_hwt = true;
+        pr_notice("is_triggering_hwt : true\n");
+        flush_cache_on_panic();
+    }
+#endif  // VENDOR_EDIT
+
+#ifdef VENDOR_EDIT
+//Liang.Zhang@PSW.TECH.BOOTUP, 2019/01/22, Add for monitor kernel error
+    if(!hwt_happened)
+    {
+        hwt_happened = 1;
+        deal_fatal_err();
+    }
+#endif  // VENDOR_EDIT
 
 	if (!cpu_possible(cpu)) {
 		aee_wdt_printf("FIQ: Watchdog time out at incorrect CPU %d ?\n",

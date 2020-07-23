@@ -16,7 +16,8 @@
 #
 
 ccflags-y += -I$(MTK_CUSTOM_PATH)/imgsensor/inc \
-
+#Lijian@ODM.Camera.Drv 20190827 for snesor bringup
+obj-y		+= wl2864/
 obj-y		+= regulator/
 obj-y		+= gpio/
 obj-y		+= mclk/

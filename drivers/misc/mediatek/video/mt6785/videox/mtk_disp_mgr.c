@@ -87,6 +87,12 @@
 #include "ddp_rsz.h"
 #include "disp_tphint.h"
 
+#ifdef ODM_HQ_EDIT
+/* Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Feature, 2018/09/10, Add for sau and silence close backlight */
+#include <mt-plat/mtk_boot_common.h>
+#include <soc/oppo/oppo_project.h>
+extern unsigned long silence_mode;
+#endif /*ODM_HQ_EDIT*/
 
 #define DDP_OUTPUT_LAYID 4
 
@@ -1269,6 +1275,13 @@ int _ioctl_get_display_caps(unsigned long arg)
 		caps_info.disp_feature |= DISP_FEATURE_ARR;
 		DISPMSG("%s,support ARR feature\n", __func__);
 	}
+#ifdef CONFIG_MTK_HIGH_FRAME_RATE
+	/*DynFPS*/
+	if (primary_display_is_support_DynFPS()) {
+		caps_info.disp_feature |= DISP_FEATURE_DYNFPS;
+		DISPMSG("%s,support DynFPS feature\n", __func__);
+	}
+#endif
 	if (copy_to_user(argp, &caps_info, sizeof(caps_info))) {
 		DISP_PR_ERR("[FB] copy_to_user failed! line:%d\n", __LINE__);
 		ret = -EFAULT;
@@ -1599,6 +1612,40 @@ int _ioctl_wait_touch_hint(unsigned long arg)
 
 /*-----------------function for ARR notify fps changed end--------*/
 
+#ifdef CONFIG_MTK_HIGH_FRAME_RATE
+/*--------------------------DynFPS start-------------------*/
+int _ioctl_get_multi_configs(unsigned long arg)
+{
+	int ret = 0;
+	void __user *argp = (void __user *)arg;
+	struct multi_configs multi_cfgs;
+
+	if (copy_from_user(&multi_cfgs,
+			argp, sizeof(multi_cfgs))) {
+		DISP_PR_INFO("[dfps] copy_from_user failed! line:%d\n",
+			__LINE__);
+		return -EFAULT;
+	}
+
+	ret = primary_display_get_multi_configs(&multi_cfgs);
+
+	if (ret != 0) {
+		DISP_PR_INFO("[dfps] %s fail! line:%d\n", __func__, __LINE__);
+		ret = -EFAULT;
+		return ret;
+	}
+	if (copy_to_user(argp, &multi_cfgs, sizeof(multi_cfgs))) {
+		DISP_PR_INFO("[dfps] copy_to_user failed! line:%d\n", __LINE__);
+		ret = -EFAULT;
+	}
+
+	return ret;
+
+}
+/*--------------------------DynFPS end-------------------*/
+#endif
+
+
 const char *_session_ioctl_str(unsigned int cmd)
 {
 	switch (cmd) {
@@ -1670,6 +1717,8 @@ const char *_session_ioctl_str(unsigned int cmd)
 		return "DISP_IOCTL_FRAME_CONFIG";
 	case DISP_IOCTL_TOUCH_HINT:
 		return "DISP_IOCTL_TOUCH_HINT";
+	case DISP_IOCTL_GET_MULTI_CONFIGS:
+		return "DISP_IOCTL_GET_MULTI_CONFIGS";
 	default:
 		break;
 	}
@@ -1721,6 +1770,15 @@ long mtk_disp_mgr_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return _ioctl_wait_touch_hint(arg);
 	case DISP_IOCTL_GET_SUPPORTED_FPS:
 		return _ioctl_get_supported_fps(arg);
+//#ifdef ODM_HQ_EDIT
+/* Longyajun@ODM.HQ.Multimedia.LCM 2019/12/12 modified for TM JDI pq */
+	case DISP_IOCTL_GET_LCM_MODULE_INFO:
+		return _ioctl_get_lcm_module_info(arg);
+//#endif /* ODM_HQ_EDIT */
+#ifdef CONFIG_MTK_HIGH_FRAME_RATE
+	case DISP_IOCTL_GET_MULTI_CONFIGS:
+		return _ioctl_get_multi_configs(arg);
+#endif
 	case DISP_IOCTL_AAL_EVENTCTL:
 	case DISP_IOCTL_AAL_GET_HIST:
 	case DISP_IOCTL_AAL_INIT_REG:
@@ -1914,11 +1972,52 @@ static const struct file_operations mtk_disp_mgr_fops = {
 	.read = mtk_disp_mgr_read,
 };
 
+#ifdef ODM_HQ_EDIT
+/*
+* Yongpeng.Yi@PSW.MM.Display.LCD.Machine, 2018/02/27,
+* add for face fill light node
+*/
+unsigned int ffl_set_mode = 0;
+unsigned int ffl_backlight_on = 0;
+extern bool ffl_trigger_finish;
+extern void ffl_set_enable(unsigned int enable);
+static ssize_t FFL_SET_show(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	printk("%s ffl_set_mode=%d\n", __func__, ffl_set_mode);
+	return sprintf(buf, "%d\n", ffl_set_mode);
+}
+
+static ssize_t FFL_SET_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t num)
+{
+	int ret;
+
+	ret = kstrtouint(buf, 10, &ffl_set_mode);
+
+	printk("%s ffl_set_mode=%d\n", __func__, ffl_set_mode);
+
+	if (ffl_trigger_finish && (ffl_backlight_on == 1) && (ffl_set_mode == 1)) {
+		ffl_set_enable(1);
+	}
+
+	return num;
+}
+
+static DEVICE_ATTR(FFL_SET, 0644, FFL_SET_show, FFL_SET_store);
+#endif /*ODM_HQ_EDIT*/
 static int mtk_disp_mgr_probe(struct platform_device *pdev)
 {
 	struct class_device;
 	struct class_device *class_dev = NULL;
 	int ret;
+	#ifdef ODM_HQ_EDIT
+	/*
+	* Yongpeng.Yi@PSW.MM.Display.LCD.Stability, 2018/01/16,
+	* add for lcd serial num
+	*/
+	struct device *dev =NULL;
+	#endif /* ODM_HQ_EDIT */
 
 	pr_debug("%s called\n", __func__);
 
@@ -1940,6 +2039,24 @@ static int mtk_disp_mgr_probe(struct platform_device *pdev)
 	class_dev = (struct class_device *)device_create(mtk_disp_mgr_class,
 						NULL, mtk_disp_mgr_devno,
 						NULL, DISP_SESSION_DEVICE);
+	#ifdef ODM_HQ_EDIT
+	dev =(struct device *) class_dev;
+	/*
+	* Yongpeng.Yi@PSW.MM.Display.LCD.Machine, 2018/09/07,
+	* add for face fill light node
+	*/
+	ret = device_create_file(dev, &dev_attr_FFL_SET);
+	if (ret < 0) {
+		printk("%s FFL_SET device create file failed!\n", __func__);
+	}
+/* Yongpeng.Yi@PSW.MultiMedia.Display.LCD.Feature, 2018/09/10, Add for sau and silence close backlight */
+	if ((oppo_boot_mode == OPPO_SILENCE_BOOT)
+			||(get_boot_mode() == OPPO_SAU_BOOT))
+	{
+		printk("%s OPPO_SILENCE_BOOT set silence_mode to 1\n", __func__);
+		silence_mode = 1;
+	}
+	#endif /*ODM_HQ_EDIT*/
 	disp_sync_init();
 
 	external_display_control_init();

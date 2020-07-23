@@ -15,6 +15,22 @@
 #include <linux/string.h>
 #include <linux/kernel.h>
 
+#ifdef ODM_HQ_EDIT
+/* liyan@ODM.Multimedia.LCD  2019/08/27 add for LCD bias setting */
+#ifdef CONFIG_SET_LCD_BIAS_ODM_HQ
+typedef enum {
+	FIRST_VSP_AFTER_VSN = 0,
+	FIRST_VSN_AFTER_VSP = 1
+} LCD_BIAS_POWER_ON_SEQUENCE;
+#endif //CONFIG_SET_LCD_BIAS_ODM_HQ
+#endif //ODM_HQ_EDIT
+
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver, begin. */
+#ifdef CONFIG_MACH_MT6771
+extern bool hq_get_is_ilitek_lcd(void);
+#endif
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver, end. */
+
 #if defined(CONFIG_RT5081_PMU_DSV) || defined(CONFIG_MT6370_PMU_DSV)
 static struct regulator *disp_bias_pos;
 static struct regulator *disp_bias_neg;
@@ -79,12 +95,31 @@ int display_bias_enable(void)
 	display_bias_regulator_init();
 
 	/* set voltage with min & max*/
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver, begin. */
+#ifdef CONFIG_MACH_MT6771
+	if(false == hq_get_is_ilitek_lcd())
+	    ret = regulator_set_voltage(disp_bias_pos, 6000000, 6000000);
+	else
+	    ret = regulator_set_voltage(disp_bias_pos, 5800000, 5800000);
+#else
 	ret = regulator_set_voltage(disp_bias_pos, 5400000, 5400000);
+#endif
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver, end. */
 	if (ret < 0)
 		pr_info("set voltage disp_bias_pos fail, ret = %d\n", ret);
 	retval |= ret;
 
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver, begin. */
+#ifdef CONFIG_MACH_MT6771
+	if(false == hq_get_is_ilitek_lcd())
+	    ret = regulator_set_voltage(disp_bias_neg, 6000000, 6000000);
+	else
+	    ret = regulator_set_voltage(disp_bias_neg, 5800000, 5800000);
+#else
 	ret = regulator_set_voltage(disp_bias_neg, 5400000, 5400000);
+#endif
+/* liunianliang@ODM.BSP.System 2020/02/17, modify for oppo6771 LCD driver, begin. */
+
 	if (ret < 0)
 		pr_info("set voltage disp_bias_neg fail, ret = %d\n", ret);
 	retval |= ret;
@@ -140,6 +175,81 @@ int display_bias_disable(void)
 	return retval;
 }
 EXPORT_SYMBOL(display_bias_disable);
+
+#ifdef ODM_HQ_EDIT
+/* liyan@ODM.Multimedia.LCD  2019/08/27 add for LCD bias setting */
+#ifdef CONFIG_SET_LCD_BIAS_ODM_HQ
+void pmi_lcd_bias_set_vspn_vol(unsigned int value)
+{
+	int ret = 0;
+	unsigned int level;
+
+	display_bias_regulator_init();
+
+	level = value * 1000;
+
+	ret = regulator_set_voltage(disp_bias_pos, level, level);
+	if (ret < 0)
+		pr_info("set voltage disp_bias_pos fail, ret = %d\n", ret);
+
+	ret = regulator_set_voltage(disp_bias_neg, level, level);
+	if (ret < 0)
+		pr_info("set voltage disp_bias_neg fail, ret = %d\n", ret);
+}
+EXPORT_SYMBOL(pmi_lcd_bias_set_vspn_vol);
+
+void pmi_lcd_bias_set_vspn_en(unsigned int en, unsigned int seq)
+{
+	int retval = 0;
+
+	display_bias_regulator_init();
+
+    if (en) {			/* enable regulator */
+		if (seq == FIRST_VSP_AFTER_VSN) {
+            retval |= regulator_enable(disp_bias_pos);
+	        //mdelay(5);
+			retval |= regulator_enable(disp_bias_neg);
+		} else if (seq == FIRST_VSN_AFTER_VSP) {
+		    retval |= regulator_enable(disp_bias_neg);
+			//mdelay(5);
+			retval |= regulator_enable(disp_bias_pos);
+
+		}
+		if (retval < 0)
+		pr_info("enable regulator disp_bias fail, retval = %d\n", retval);
+    } else {			/* disable regulator */
+        if (seq == FIRST_VSP_AFTER_VSN) {
+			retval |= regulator_disable(disp_bias_pos);
+			//mdelay(5);
+			retval |= regulator_disable(disp_bias_neg);
+        } else if (seq == FIRST_VSN_AFTER_VSP) {
+			retval |= regulator_disable(disp_bias_neg);
+			//mdelay(5);
+			retval |= regulator_disable(disp_bias_pos);
+        }
+		if (retval < 0)
+		pr_info("disable regulator disp_bias fail, retval = %d\n", retval);
+    }
+}
+EXPORT_SYMBOL(pmi_lcd_bias_set_vspn_en);
+
+
+int pmi_lcd_bias_vsp_is_enabled(void)
+{
+	return regulator_is_enabled(disp_bias_pos);
+}
+EXPORT_SYMBOL(pmi_lcd_bias_vsp_is_enabled);
+
+
+int pmi_lcd_bias_vsn_is_enabled(void)
+{
+	return regulator_is_enabled(disp_bias_neg);
+}
+EXPORT_SYMBOL(pmi_lcd_bias_vsn_is_enabled);
+
+
+#endif //CONFIG_SET_LCD_BIAS_ODM_HQ
+#endif // ODM_HQ_EDIT
 
 #else
 int display_bias_regulator_init(void)

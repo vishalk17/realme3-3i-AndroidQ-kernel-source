@@ -29,7 +29,12 @@ static struct ppm_policy_data sysboost_policy = {
 	.name			= __stringify(PPM_POLICY_SYS_BOOST),
 	.lock			= __MUTEX_INITIALIZER(sysboost_policy.lock),
 	.policy			= PPM_POLICY_SYS_BOOST,
+#ifdef VENDOR_EDIT
+//cuixiaogang@SH, change sys boost priority. 2019.12.31
+	.priority		= PPM_POLICY_PRIO_USER_SPECIFY_BASE,
+#else
 	.priority		= PPM_POLICY_PRIO_PERFORMANCE_BASE,
+#endif /*VENDOR_EDIT */
 	.update_limit_cb	= ppm_sysboost_update_limit_cb,
 	.status_change_cb	= ppm_sysboost_status_change_cb,
 };
@@ -573,7 +578,11 @@ static int __init ppm_sysboost_policy_init(void)
 	ppm_info("@%s: register %s done!\n", __func__, sysboost_policy.name);
 
 out:
+#ifdef VENDOR_EDIT
+	sysboost_policy.is_enabled = true;
+#else
 	sysboost_policy.is_enabled = false;
+#endif
 	FUNC_EXIT(FUNC_LV_POLICY);
 
 	return ret;

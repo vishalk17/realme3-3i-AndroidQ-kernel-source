@@ -115,6 +115,10 @@ obj-$(CONFIG_MTK_RTC)	+= rtc/
 obj-$(CONFIG_MTK_XO)	+= xo/
 obj-$(CONFIG_MTK_CMDQ) += cmdq/
 obj-$(CONFIG_MTK_SMI_EXT) += smi/
+#ifdef ODM_HQ_EDIT
+#liyan@ODM.Multimedia.LCD  2019/08/27 add for LCD bias setting
+obj-$(CONFIG_SET_LCD_BIAS_ODM_HQ) += lcd_bias/
+#endif #ODM_HQ_EDIT
 obj-$(CONFIG_MTK_LCM) += lcm/
 obj-$(CONFIG_MTK_LCM) += ext_disp/
 obj-$(CONFIG_MTK_HDMI_SUPPORT) += hdmi/
@@ -156,6 +160,12 @@ obj-$(CONFIG_MTK_JPEG) += jpeg/
 obj-$(CONFIG_MTK_SPMTWAM) += twam/
 obj-$(CONFIG_MTK_LOW_POWER_MODULE) += lpm/
 
-ifeq ($(CONFIG_MTK_HAVE_EXTERNAL_VENDOR_PATH),y)
-obj-y += ../../../../$(subst $\",,$(CONFIG_MTK_EXTERNAL_VENDOR_PATH))
-endif
+
+obj-$(CONFIG_MTK_SMARTPA_SOUND)	+= smartpa/
+
+#Lijian@ODM.Camera.Drv 20190827 for snesor bringup
+obj-$(CONFIG_HQ_CAMERA_LDO) += camera_ldo/
+##ifdef ODM_HQ_EDIT
+## zuoqiquan@ODM.BSP.Sensor  2019/09/06 bring up nfc 
+obj-$(CONFIG_NFC_CHIP_PN553) += nfc/
+##endif

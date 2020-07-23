@@ -70,9 +70,18 @@ static int tilt_detect_recv_data(struct data_unit_t *event, void *reserved)
 
 	if (event->flush_action == FLUSH_ACTION)
 		err = situation_flush_report(ID_TILT_DETECTOR);
+#ifdef ODM_HQ_EDIT
+/* zuoqiquan@ODM_HQ.Sensors.SCP.BSP.Sensors.Config, 2019/11/18, reverse tilt detector report logic. */
+	else if (event->flush_action == DATA_ACTION)
+		err = situation_data_report_t(ID_TILT_DETECTOR,
+			!event->tilt_event.state, (int64_t)event->time_stamp);
+	/* zuoqiquan@ODM.BSP.Sensor  2019/11/29 add log for tilt_detect */
+	printk("tilt_detect state[%d]\n",!event->tilt_event.state);
+#else
 	else if (event->flush_action == DATA_ACTION)
 		err = situation_data_report_t(ID_TILT_DETECTOR,
 			event->tilt_event.state, (int64_t)event->time_stamp);
+#endif
 	return err;
 }
 

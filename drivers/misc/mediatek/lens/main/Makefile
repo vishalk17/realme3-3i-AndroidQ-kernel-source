@@ -23,7 +23,6 @@ MTK_CUSTOM_PATH  := $(srctree)/drivers/misc/mediatek
 
 subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/inc
 subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/common/lc898122af
-subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/common/dw9800waf
 subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/common/lc898212xdaf/inc
 ifeq ($(CONFIG_MTK_LENS_BU63165AF_SUPPORT), y)
   subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/lens/main/common/bu63165af/inc
@@ -41,7 +40,6 @@ MAIN_CFILES  += common/bu6429af/BU6429AF.c
 MAIN_CFILES  += common/bu6429af/bu64748af.c
 MAIN_CFILES  += common/bu6429af/bu64748_function.c
 MAIN_CFILES += common/dw9714af/DW9714AF.c
-MAIN_CFILES += common/dw9800waf/DW9800WAF.c
 MAIN_CFILES  += common/dw9814af/DW9814AF.c
 MAIN_CFILES  += common/dw9718af/DW9718AF.c
 MAIN_CFILES  += common/dw9718saf/DW9718SAF.c
@@ -57,11 +55,23 @@ MAIN_CFILES  += common/lc898217afa/LC898217AFA.c
 MAIN_CFILES  += common/lc898217afb/LC898217AFB.c
 MAIN_CFILES  += common/lc898217afc/LC898217AFC.c
 MAIN_CFILES  += common/lc898122af/LC898122AF.c
+#ifdef ODM_HQ_EDIT
+#Lijian@ODM.Camra 20190816 for FP5516 Bringup
+MAIN_CFILES  += common/fp5516af/FP5516AF.c
+MAIN_CFILES  += common/dw9718taf/DW9718TAF.c
+MAIN_CFILES  += common/bu64253af/BU64253AF.c
+MAIN_CFILES += common/dw9714af_ts/DW9714AF_TS.c
+MAIN_CFILES += common/dw9714af_qt/DW9714AF_QT.c
+#endif
 MAIN_CFILES  += common/lc898122af/OisCmd.c
 MAIN_CFILES  += common/lc898122af/OisIni.c
 MAIN_CFILES  += common/ad5820af/AD5820AF.c
 MAIN_CFILES  += common/wv511aaf/WV511AAF.c
 MAIN_CFILES  += common/ak7371af/AK7371AF.c
+MAIN_CFILES  += common/ak7374af/AK7374AF.c
+#ifdef VENDOR_EDIT
+MAIN_CFILES  += common/fp5516af/FP5516AF.c
+#endif
 ifeq ($(CONFIG_MTK_LENS_BU63165AF_SUPPORT), y)
 MAIN_CFILES  += common/bu63165af/BU63165AF.c
 MAIN_CFILES  += common/bu63165af/OIS_func.c
@@ -85,11 +95,18 @@ obj-y  += common/bu6424af/
 obj-y  += common/bu6429af/
 obj-y  += common/bu64748af/
 obj-y  += common/dw9714af/
-obj-y  += common/dw9800waf/
 obj-y  += common/dw9814af/
 obj-y  += common/dw9718af/
 obj-y  += common/dw9718saf/
 obj-y  += common/dw9719taf/
+#ifdef ODM_HQ_EDIT
+#Lijian@ODM.Camra 20190816 for FP5516 Bringup
+obj-y  += common/fp5516af/
+obj-y  += common/dw9718taf/
+obj-y  += common/bu64253af/
+obj-y  += common/dw9714af_ts/
+obj-y  += common/dw9714af_qt/
+#endif
 obj-y  += common/lc898212af/
 obj-y  += common/lc898212xdaf/
 obj-y  += common/lc898214af/
@@ -100,6 +117,10 @@ obj-y  += common/lc898217afc/
 obj-y  += common/lc898122af/
 obj-y  += common/wv511aaf/
 obj-y  += common/ak7371af/
+obj-y  += common/ak7374af/
+#ifdef VENDOR_EDIT
+obj-y  += common/fp5516af/
+#endif
 ifeq ($(CONFIG_MTK_LENS_BU63165AF_SUPPORT), y)
   obj-y  += common/bu63165af/
 else

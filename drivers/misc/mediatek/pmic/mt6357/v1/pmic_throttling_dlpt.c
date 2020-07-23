@@ -1136,8 +1136,13 @@ int dlpt_notify_handler(void *unused)
 				pr_info("[DLPT_POWER_OFF_EN] notify SOC=0 to power off, power_off_cnt=%d\n",
 					power_off_cnt);
 				if (power_off_cnt >= 4)
+#ifndef ODM_HQ_EDIT
+/*wangtao@ODM_HQ.BSP.CHG 2020/01/07, add for shutdown use oppo uisoc*/
 					kernel_restart(
 						"DLPT reboot system");
+#else
+					power_off_cnt = 0;
+#endif
 			} else
 				power_off_cnt = 0;
 		}
