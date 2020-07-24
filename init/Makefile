@@ -4,6 +4,7 @@
 #
 
 ccflags-y := -fno-function-sections -fno-data-sections
+ccflags-y += -Idrivers/soc/oppo/
 
 ifdef CONFIG_MTPROF
 ccflags-y += -Idrivers/misc/mediatek/mtprof/
