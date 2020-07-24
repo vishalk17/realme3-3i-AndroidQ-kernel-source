@@ -1,3 +1,5 @@
+ccflags-y += -I$(srctree)/include/linux
+
 ifeq ($(TARGET_PRODUCT),sdm845)
 DEFS_PLATFORM = -DCONFIG_OPPO_BSP_SECCOM_PLATFORM=845
 else ifeq ($(TARGET_PRODUCT),sdm670)
