@@ -1,3 +1,5 @@
+ccflags-y += -I$(srctree)/include/linux/
+
 ifeq ($(TARGET_PRODUCT),sdm660_64)
 DEFS_PLATFORM = -DCONFIG_OPPO_FINGERPRINT_PLATFORM=660
 else ifeq ($(TARGET_PRODUCT),msm8953_64)
