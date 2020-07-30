@@ -11,6 +11,8 @@
 # See http://www.gnu.org/licenses/gpl-2.0.html for more details.
 #
 
+ccflags-y += -Wno-error=format
+
 MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
 subdir-ccflags-y += -Werror -Wunused-function -Wunused-variable
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include

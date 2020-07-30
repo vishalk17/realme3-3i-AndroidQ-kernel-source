@@ -1392,10 +1392,10 @@ static struct delayed_work bq24190_irq_delay_work;
 bool fg_bq24190_irq_delay_work_running = false;
 static void do_bq24190_irq_delay_work(struct work_struct *data)
 {
-	int val_buf;
+	int val_buf = 0;
 	int i;
 	int otg_overcurrent_flag = 0;
-	
+
 	if (!charger_ic) {
 		pr_err("%s charger_ic null,return\n", __func__);
 		return;
@@ -1407,7 +1407,7 @@ static void do_bq24190_irq_delay_work(struct work_struct *data)
 		if (val_buf == 0x40) {
 			otg_overcurrent_flag++;
 		}
-		
+
 		usleep_range(10000, 10200);
 	}
 	printk("do_bq24190_irq_delay_work disable  vbus out flag =%d\n",otg_overcurrent_flag);

@@ -1272,7 +1272,7 @@ void is_iindpm_mode(void)
 {
 	int rc = 0;
 	int val_buf;
-	int reg_ovp;
+	int reg_ovp = 0;
 	int val_buf1;
 	int charger_type = 0;
 
