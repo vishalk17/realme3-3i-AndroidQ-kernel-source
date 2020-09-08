@@ -4153,7 +4153,7 @@ static long mmc_rpmb_ioctl(struct file *filp, unsigned int cmd,
 		break;
 	}
 
-	return ret;
+	return 0;
 }
 
 #ifdef CONFIG_COMPAT
